@@ -22,6 +22,9 @@ target_include_directories(cpptest PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
+find_package(libassert REQUIRED)
+target_link_libraries(cpptest libassert::assert)
+
 add_subdirectory(src)
 
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/ DESTINATION include)

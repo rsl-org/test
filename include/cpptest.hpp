@@ -1,32 +1,55 @@
 #pragma once
+#include <print>
+#include <stdexcept>
+#include <string>
 #include <vector>
 #include <experimental/meta>
+#include <libassert/assert.hpp>
+#include <cpptest/reporter.hpp>
 
-#include <iostream>
-
-namespace testing {}
+#ifndef CPPTEST_TEST_NAMESPACE
+#  define CPPTEST_TEST_NAMESPACE ::
+#endif
 
 namespace cpptest {
 
 inline namespace annotations {
 struct TestTag {};
 constexpr inline TestTag test;
+
+struct ExpectFailureTag{};
+constexpr inline ExpectFailureTag expect_failure;
 }  // namespace annotations
+
+struct assertion_failure : std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
 
 namespace _impl {
 template <std::meta::info R>
-bool test_runner() {
-  [:R:]();
-  return true;
+static bool test_runner(std::string& error) {
+  constexpr static bool expect_failure = !annotations_of(R, ^^annotations::ExpectFailureTag).empty();
+
+  try {
+    [:R:]();
+    return !expect_failure;
+  } catch (assertion_failure const& failure) {
+    error = failure.what();
+  } catch (std::exception const& exc) {
+    error = exc.what();
+  }  //
+  catch (...) {}
+  return expect_failure;
 }
 }  // namespace _impl
 
 struct Test {
-  bool (*run)();
+  using runner_type = bool(*)(std::string&);
+  runner_type run;
   char const* name;
 
   explicit consteval Test(std::meta::info R)
-      : run(extract<bool (*)()>(substitute(^^_impl::test_runner, {reflect_constant(R)})))
+      : run(extract<runner_type>(substitute(^^_impl::test_runner, {reflect_constant(R)})))
       , name(display_string_of(R).data()) {}
 };
 
@@ -36,7 +59,7 @@ consteval bool is_test(std::meta::info R) {
 }
 
 template <auto TUTag>
-consteval std::vector<Test> discover_tests(std::meta::info target_namespace = ^^::testing) {
+consteval std::vector<Test> discover_tests(std::meta::info target_namespace) {
   std::vector<Test> tests{};
 
   for (auto R : members_of(target_namespace, std::meta::access_context::current())) {
@@ -44,7 +67,7 @@ consteval std::vector<Test> discover_tests(std::meta::info target_namespace = ^^
       continue;
     }
     if (is_function(R) && is_test(R)) {
-      tests.push_back(Test{R});
+      tests.emplace_back(R);
     }
   }
   return tests;
@@ -69,7 +92,7 @@ consteval std::vector<std::meta::info> enumerate_namespaces(std::meta::info ns) 
 
 std::vector<Test>& registry();
 
-template <std::meta::info NS, auto TUTag>
+template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_namespace() {
   constexpr auto tests = define_static_array(_impl::discover_tests<TUTag>(NS));
   for (auto T : tests) {
@@ -78,22 +101,25 @@ bool enable_namespace() {
   return true;
 }
 
-template <auto TUTag>
+template <auto TUTag = [] {}>
 bool enable_tests() {
 #ifdef CPPTEST_SCAN_GLOBAL_NAMESPACE
   enable_namespace<^^::, TUTag>();
 #endif
 
-  constexpr static auto namespaces = define_static_array(_impl::enumerate_namespaces<TUTag>(^^::));
+  constexpr static auto namespaces =
+      define_static_array(_impl::enumerate_namespaces<TUTag>(^^CPPTEST_TEST_NAMESPACE));
   template for (constexpr auto NS : namespaces) {
     enable_namespace<NS, TUTag>();
   }
   return true;
 }
 
-void run_tests();
+bool run(std::vector<cpptest::Test> const& tests, Reporter& reporter);
 }  // namespace cpptest
 
+#ifndef CPPTEST_SKIP
 namespace {
 [[maybe_unused]] const bool _cppinfo_registration_helper = cpptest::enable_tests<[] {}>();
 }
+#endif

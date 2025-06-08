@@ -30,6 +30,9 @@ class cpptestRecipe(ConanFile):
         if self.options.shared:
             self.options.rm_safe("fPIC")
 
+    def requirements(self):
+        self.requires("libassert/2.1.5")
+    
     def layout(self):
         cmake_layout(self)
     
