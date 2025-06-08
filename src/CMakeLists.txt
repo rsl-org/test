@@ -1,0 +1,1 @@
+target_sources(cpptest PUBLIC cpptest.cpp)

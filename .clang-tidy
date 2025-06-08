@@ -1,0 +1,34 @@
+---
+Checks: "*,
+        -abseil-*,
+        -altera-*,
+        -android-*,
+        -fuchsia-*,
+        -google-*,
+        -llvm*,
+        -modernize-use-trailing-return-type,
+        -zircon-*,
+        -readability-else-after-return,
+        -readability-static-accessed-through-instance,
+        -readability-avoid-const-params-in-decls,
+        -cppcoreguidelines-non-private-member-variables-in-classes,
+        -misc-non-private-member-variables-in-classes,
+        -hicpp-named-parameter,
+        -clang-diagnostic-unknown-attributes,
+        -readability-named-parameter,
+        -*-avoid-c-arrays,
+        -*-magic-numbers,
+        -*-avoid-do-while,
+        -*-union-access,
+        -readability-avoid-nested-conditional-operator,
+        -readability-identifier-length,
+        -modernize-use-designated-initializers,
+        -misc-include-cleaner,
+        -misc-use-internal-linkage,
+        -cppcoreguidelines-noexcept-move-operations,
+        -hicpp-noexcept-move,
+        -performance-noexcept-move-constructor
+"
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+FormatStyle:     none

@@ -1,0 +1,1 @@
+target_sources(cpptest_test PRIVATE always_passes.cpp main.cpp)
