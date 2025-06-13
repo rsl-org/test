@@ -3,14 +3,14 @@
 #include <functional>
 #include <experimental/meta>
 
-#include <cpptest/annotations.hpp>
-#include <cpptest/fixture.hpp>
-#include <cpptest/reporter.hpp>
-#include <cpptest/_impl/util.hpp>
+#include <retest/annotations.hpp>
+#include <retest/fixture.hpp>
+#include <retest/reporter.hpp>
+#include <retest/_impl/util.hpp>
 
 #include <libassert/assert.hpp>
 
-namespace cpptest {
+namespace retest {
 struct assertion_failure : std::runtime_error {
   using std::runtime_error::runtime_error;
 };
@@ -163,4 +163,4 @@ consteval TestDef make_test(std::meta::info R) {
   return extract<TestDef>(substitute(^^make_test_impl, {reflect_constant(R)}));
 }
 }  // namespace _impl
-}  // namespace cpptest
+}  // namespace retest

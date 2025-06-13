@@ -2,8 +2,8 @@ from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 
 
-class cpptestRecipe(ConanFile):
-    name = "cpptest"
+class retestRecipe(ConanFile):
+    name = "retest"
     version = "0.1"
     package_type = "library"
 
@@ -52,5 +52,5 @@ class cpptestRecipe(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = ["cpptest"]
+        self.cpp_info.libs = ["retest"]
 

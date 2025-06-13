@@ -6,17 +6,17 @@
 
 #include <experimental/meta>
 
-#ifndef CPPTEST_SCAN_GLOBAL_NAMESPACE
-#  define CPPTEST_SCAN_GLOBAL_NAMESPACE 0
+#ifndef RETEST_SCAN_GLOBAL_NAMESPACE
+#  define RETEST_SCAN_GLOBAL_NAMESPACE 0
 #endif
 
-#include <cpptest/_impl/util.hpp>
-#include <cpptest/annotations.hpp>
-#include <cpptest/fixture.hpp>
-#include <cpptest/test.hpp>
+#include <retest/_impl/util.hpp>
+#include <retest/annotations.hpp>
+#include <retest/fixture.hpp>
+#include <retest/test.hpp>
 
 
-namespace cpptest {
+namespace retest {
 namespace _impl {
 template <std::meta::info R>
 consteval std::vector<std::meta::info> expand_test() {
@@ -96,7 +96,7 @@ bool enable_namespace() {
 
 template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_tests() {
-  if constexpr (NS != ^^:: || CPPTEST_SCAN_GLOBAL_NAMESPACE) {
+  if constexpr (NS != ^^:: || RETEST_SCAN_GLOBAL_NAMESPACE) {
     enable_namespace<NS, TUTag>();
   }
 
@@ -107,4 +107,4 @@ bool enable_tests() {
   return true;
 }
 
-}  // namespace cpptest
+}  // namespace retest

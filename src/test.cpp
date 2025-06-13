@@ -1,7 +1,7 @@
 
 #include <libassert/assert.hpp>
-#include <cpptest/all.hpp>
-#include <cpptest/reporter.hpp>
+#include <retest/all.hpp>
+#include <retest/reporter.hpp>
 
 template <bool Colorize>
 void failure_handler(libassert::assertion_info const& info) {
@@ -15,10 +15,10 @@ void failure_handler(libassert::assertion_info const& info) {
   message += "\n";
   message += info.statement(scheme) + info.print_binary_diagnostics(width, scheme) +
              info.print_extra_diagnostics(width, scheme);
-  throw cpptest::assertion_failure(message);
+  throw retest::assertion_failure(message);
 }
 
-namespace cpptest {
+namespace retest {
 
 bool run(std::vector<Test> const& tests, Reporter& reporter) {
   reporter.on_start(tests.size());
@@ -68,4 +68,4 @@ TestResult Test::TestRun::run() const {
   ret.passed = test->expect_failure;
   return ret;
 }
-}  // namespace cpptest
+}  // namespace retest

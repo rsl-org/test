@@ -1,7 +1,7 @@
-target_sources(cpptest PUBLIC 
+target_sources(retest PUBLIC 
     discovery.cpp
     test.cpp
     main.cpp
 )
 
-target_include_directories(cpptest PRIVATE .)
+target_include_directories(retest PRIVATE .)

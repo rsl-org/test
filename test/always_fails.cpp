@@ -1,8 +1,8 @@
-#include <cpptest.hpp>
+#include <retest.hpp>
 
 namespace foo {
-[[= cpptest::test]]
-[[= cpptest::expect_failure]]
+[[= retest::test]]
+[[= retest::expect_failure]]
 void always_fails() {
     ASSERT(false, "oh no");
 }

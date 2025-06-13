@@ -1,11 +1,11 @@
 #pragma once
-#include <cpptest/reporter.hpp>
+#include <retest/reporter.hpp>
 #include <array>
 #include <print>
 #include <algorithm>
 #include <libassert/assert.hpp>
 
-namespace cpptest::_impl {
+namespace retest::_impl {
 class ConsoleReporter : public Reporter {
 public:
   void on_start(size_t total) override { std::print("Running {} tests...\n", total); }
@@ -39,4 +39,4 @@ public:
     return libassert::isatty(libassert::stderr_fileno);
   }
 };
-}  // namespace cpptest::_impl
+}  // namespace retest::_impl

@@ -4,9 +4,9 @@
 #include <tuple>
 #include <vector>
 
-#include <cpptest/_impl/util.hpp>
+#include <retest/_impl/util.hpp>
 
-namespace cpptest {
+namespace retest {
 namespace _impl {
 template <typename T, std::meta::info Set>
 T param_set_to_tuple() {
@@ -147,4 +147,4 @@ void make_calls() {
   }
 }
 
-}  // namespace cpptest
+}  // namespace retest

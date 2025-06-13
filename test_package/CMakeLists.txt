@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_CXX_STANDARD 26)
 project(PackageTest CXX)
 
-find_package(cpptest CONFIG REQUIRED)
+find_package(retest CONFIG REQUIRED)
 
 add_executable(example src/example.cpp)
-target_link_libraries(example cpptest::cpptest)
+target_link_libraries(example retest::retest)
 
 target_compile_options(example PUBLIC 
   "-stdlib=libc++"

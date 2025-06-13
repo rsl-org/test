@@ -1,9 +1,9 @@
-#include <cpptest.hpp>
+#include <retest.hpp>
 
 namespace {
-[[= cpptest::test]] void always_passes() {}
+[[= retest::test]] void always_passes() {}
 }  // namespace
 
 int main() {
-    cpptest::run_tests();
+    retest::run_tests();
 }

@@ -1,8 +1,8 @@
 #pragma once
-#include <cpptest/reporter.hpp>
+#include <retest/reporter.hpp>
 #include <iostream>
 
-namespace cpptest::impl {
+namespace retest::impl {
 class JUnitXmlReporter : public Reporter {
   std::ostream& out_;
 
@@ -31,4 +31,4 @@ public:
   void on_summary(const std::vector<TestResult>&) override {}
   [[nodiscard]] bool colorize() const override { return false; }
 };
-}  // namespace cpptest::impl
+}  // namespace retest::impl

@@ -1,5 +1,5 @@
-#define CPPTEST_SKIP
-#include <cpptest.hpp>
+#define RETEST_SKIP
+#include <retest.hpp>
 
 #include <fstream>
 #include <regex>
@@ -50,8 +50,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto all_tests = cpptest::registry();
-  std::vector<cpptest::Test> tests{};
+  auto all_tests = retest::registry();
+  std::vector<retest::Test> tests{};
   for (auto test_def : all_tests) {
     auto test = test_def();
     if (!filter.empty()) {
@@ -74,15 +74,15 @@ int main(int argc, char** argv) {
   if (use_xml) {
     if (xml_file) {
       auto file_stream = std::ofstream(*xml_file);
-      auto reporter    = cpptest::impl::JUnitXmlReporter(file_stream);
-      result           = cpptest::run(tests, reporter);
+      auto reporter    = retest::impl::JUnitXmlReporter(file_stream);
+      result           = retest::run(tests, reporter);
     } else {
-      auto reporter = cpptest::impl::JUnitXmlReporter(std::cout);
-      result        = cpptest::run(tests, reporter);
+      auto reporter = retest::impl::JUnitXmlReporter(std::cout);
+      result        = retest::run(tests, reporter);
     }
   } else {
-    auto reporter = cpptest::_impl::ConsoleReporter();
-    result        = cpptest::run(tests, reporter);
+    auto reporter = retest::_impl::ConsoleReporter();
+    result        = retest::run(tests, reporter);
   }
 
   return result ? 0 : 1;

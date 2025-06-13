@@ -1,11 +1,11 @@
-#define CPPTEST_SKIP
-#include <cpptest.hpp>
+#define RETEST_SKIP
+#include <retest.hpp>
 
 namespace testing {
 
-[[= cpptest::test]] 
+[[= retest::test]] 
 void always_passes() {}
 
 }  // namespace testing
 
-CPPTEST_ENABLE_NS(testing)
+RETEST_ENABLE_NS(testing)
