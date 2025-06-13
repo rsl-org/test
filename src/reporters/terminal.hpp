@@ -9,8 +9,8 @@ namespace cpptest::_impl {
 class ConsoleReporter : public Reporter {
 public:
   void on_start(size_t total) override { std::print("Running {} tests...\n", total); }
-  void on_test_start(const std::string& name) override { std::print("[ RUN      ] {}\n", name); }
-  void on_test_end(const TestResult& result) override {
+  void on_test_start(std::string_view name) override { std::print("[ RUN      ] {}\n", name); }
+  void on_test_end(TestResult const& result) override {
     bool const must_colorize = colorize();
     auto const color = std::array{must_colorize ? "\033[32m" : "", must_colorize ? "\033[31m" : ""};
     const char* const reset = must_colorize ? "\033[0m" : "";

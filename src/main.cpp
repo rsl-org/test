@@ -1,5 +1,7 @@
-#include <fstream>
+#define CPPTEST_SKIP
 #include <cpptest.hpp>
+
+#include <fstream>
 #include <regex>
 
 #include "reporters/junit.hpp"
@@ -49,20 +51,21 @@ int main(int argc, char** argv) {
   }
 
   auto all_tests = cpptest::registry();
-  std::vector<cpptest::Test> tests     = all_tests;
-  if (!filter.empty()) {
-    tests = {};
-    for (auto& test : all_tests) {
-        if (!std::regex_search(test.name, std::regex{filter})) {
-            continue;
-        }
-        tests.push_back(test);
+  std::vector<cpptest::Test> tests{};
+  for (auto test_def : all_tests) {
+    auto test = test_def();
+    if (!filter.empty()) {
+      if (!std::regex_search(test.name.data(), std::regex{filter})) {
+        continue;
+      }
     }
+    tests.push_back(test);
   }
 
   if (list_only) {
-    for (auto& t : all_tests)
-      std::println("{}", t.name);
+    for (auto const& test : tests) {
+      std::println("{}", test.name);
+    }
     return 0;
   }
 

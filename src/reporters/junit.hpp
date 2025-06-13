@@ -15,8 +15,8 @@ public:
   ~JUnitXmlReporter() override { out_ << "</testsuite>\n"; }
 
   void on_start(size_t) override {}
-  void on_test_start(const std::string&) override {}
-  void on_test_end(const TestResult& result) override {
+  void on_test_start(std::string_view name) override {}
+  void on_test_end(TestResult const& result) override {
     out_ << std::format(R"(  <testcase name="{}" time="{:.3f}">)",
                         result.name,
                         result.duration_ms / 1000.0);

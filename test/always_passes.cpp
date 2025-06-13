@@ -1,3 +1,4 @@
+#define CPPTEST_SKIP
 #include <cpptest.hpp>
 
 namespace testing {
@@ -6,3 +7,5 @@ namespace testing {
 void always_passes() {}
 
 }  // namespace testing
+
+CPPTEST_ENABLE_NS(testing)

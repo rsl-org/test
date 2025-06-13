@@ -1,12 +1,7 @@
-#define CPPTEST_SKIP
-#include <cpptest.hpp>
-#include <libassert/assert.hpp>
-#include <cpptest/reporter.hpp>
 
-std::vector<cpptest::Test>& cpptest::registry() {
-  static std::vector<Test> test_registry;
-  return test_registry;
-}
+#include <libassert/assert.hpp>
+#include <cpptest/all.hpp>
+#include <cpptest/reporter.hpp>
 
 template <bool Colorize>
 void failure_handler(libassert::assertion_info const& info) {
@@ -23,27 +18,54 @@ void failure_handler(libassert::assertion_info const& info) {
   throw cpptest::assertion_failure(message);
 }
 
-bool cpptest::run(std::vector<cpptest::Test> const& tests, cpptest::Reporter& reporter) {
+namespace cpptest {
+
+bool run(std::vector<Test> const& tests, Reporter& reporter) {
   reporter.on_start(tests.size());
-  std::vector<cpptest::TestResult> results;
+  std::vector<TestResult> results;
 
   libassert::set_failure_handler(reporter.colorize() ? failure_handler<true>
                                                      : failure_handler<false>);
-  for (auto& t : tests) {
-    reporter.on_test_start(t.name);
-
-    std::string error{};
-    auto t0            = std::chrono::steady_clock::now();
-    bool ok            = t.run(error);
-    auto t1            = std::chrono::steady_clock::now();
-    double duration_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-
-    auto result = cpptest::TestResult{t.name, ok, error, duration_ms};
-    reporter.on_test_end(result);
-    results.push_back(result);
+  for (auto const& test : tests) {
+    reporter.on_test_start(test.name);
+    for (auto const& test_run : test.get_tests()) {
+      auto result = test_run.run();
+      reporter.on_test_end(result);
+      results.push_back(result);
+    }
   }
   libassert::set_failure_handler(libassert::default_failure_handler);
 
   reporter.on_summary(results);
   return std::ranges::all_of(results, [](auto& r) { return r.passed; });
 }
+
+std::vector<Test::TestRun> Test::get_tests() const {
+  std::vector<TestRun> tests{};
+  for (auto fnc : run_fncs){
+    tests.append_range((this->*fnc)());
+  }
+  return tests;
+}
+
+TestResult Test::TestRun::run() const {
+  auto ret = TestResult{.name = name};
+  try {
+    auto t0 = std::chrono::steady_clock::now();
+    fnc();
+    auto t1 = std::chrono::steady_clock::now();
+
+    ret.passed      = !test->expect_failure;
+    ret.duration_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    return ret;
+  } catch (assertion_failure const& failure) {
+    ret.error = failure.what();
+  } catch (std::exception const& exc) {
+    ret.error = exc.what();
+  }  //
+  catch (...) {}
+
+  ret.passed = test->expect_failure;
+  return ret;
+}
+}  // namespace cpptest
