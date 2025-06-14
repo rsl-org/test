@@ -1,9 +1,9 @@
 #include <retest.hpp>
 
 namespace {
-[[= retest::test]] void always_passes() {}
+[[= re::test]] void always_passes() {}
 }  // namespace
 
 int main() {
-    retest::run_tests();
+    re::run_tests();
 }

@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <libassert/assert.hpp>
 
-namespace retest::_impl {
+namespace re::_impl {
 class ConsoleReporter : public Reporter {
 public:
   void on_start(size_t total) override { std::print("Running {} tests...\n", total); }
@@ -39,4 +39,4 @@ public:
     return libassert::isatty(libassert::stderr_fileno);
   }
 };
-}  // namespace retest::_impl
+}  // namespace re::_impl

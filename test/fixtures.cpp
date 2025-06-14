@@ -1,13 +1,13 @@
 #include <retest.hpp>
 namespace {
 
-[[=retest::fixture]]
+[[=re::fixture]]
 int meta_fixture() { return 21; }
 
-[[=retest::fixture]]
+[[=re::fixture]]
 int fixture(int meta_fixture) { return meta_fixture * 2; }
 
-[[=retest::test]]
+[[=re::test]]
 void test_with_fixture(int fixture){
     ASSERT(fixture > 5);
 };

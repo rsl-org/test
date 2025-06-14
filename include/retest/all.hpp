@@ -10,7 +10,7 @@
 #include <retest/util.hpp>
 
 
-namespace retest {
+namespace re {
 bool run(std::vector<Test> const& tests, Reporter& reporter);
 
 using annotations::test;
@@ -20,7 +20,7 @@ using annotations::expect_failure;
 using annotations::params;
 using annotations::tparams;
 
-}  // namespace retest
+}  // namespace re
 
 #ifndef RETEST_IMPL_USED
 #  if defined(__GNUC__) || defined(__clang__)
@@ -33,7 +33,7 @@ using annotations::tparams;
 #define RETEST_ENABLE_NS(NS)                                                   \
   namespace {                                                                   \
   RETEST_IMPL_USED [[maybe_unused]] static bool const _cppinfo_tests_enabled = \
-      retest::enable_tests<^^NS, [] {}>();                                     \
+      re::enable_tests<^^NS, [] {}>();                                     \
   }
 
 #define RETEST_ENABLE RETEST_ENABLE_NS(::)

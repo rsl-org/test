@@ -3,7 +3,7 @@
 
 namespace testing {
 
-[[= retest::test]] 
+[[= re::test]] 
 void always_passes() {}
 
 }  // namespace testing

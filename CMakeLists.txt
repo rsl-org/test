@@ -15,6 +15,7 @@ target_compile_options(retest PUBLIC
   "-fparameter-reflection"
   "-fexpansion-statements"
   "-Wno-c++26-extensions"
+  "-ftime-trace"
   # "-fconstexpr-steps=10000000" # required to scan the global namespace
 )
 target_link_options(retest PUBLIC "-stdlib=libc++" "-lc++abi")
@@ -24,6 +25,9 @@ target_include_directories(retest PUBLIC
 
 find_package(libassert REQUIRED)
 target_link_libraries(retest libassert::assert)
+
+# find_package(rsl REQUIRED)
+# target_link_libraries(retest rsl::rsl)
 
 add_subdirectory(src)
 

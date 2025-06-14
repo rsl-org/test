@@ -29,19 +29,24 @@ int main(int argc, char** argv) {
     if (arg == "-h" || arg == "--help") {
       print_usage(argv[0]);
       return 0;
-    } else if (arg == "--list") {
+    } else if (arg == "--list" || arg == "--gtest_list_tests") {
       list_only = true;
-    } else if (arg == "--filter") {
+    } else if (arg == "--filter" || arg == "--gtest_filter") {
       if (i + 1 < argc) {
         filter = argv[++i];
       } else {
         std::print("Error: --filter requires an argument\n");
         return 1;
       }
-    } else if (arg.rfind("--xml", 0) == 0) {
+    } else if (arg.rfind("--xml", 0) == 0 ) {
       use_xml = true;
       if (arg.size() > 5 && arg[5] == '=') {
         xml_file = arg.substr(6);
+      }
+    } else if (arg.rfind("--gtest_output=xml", 0) == 0 ) {
+      use_xml = true;
+      if (arg.size() > 18 && arg[18] == ':') {
+        xml_file = arg.substr(19);
       }
     } else {
       std::print("Unknown option: {}\n", arg);
@@ -50,8 +55,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto all_tests = retest::registry();
-  std::vector<retest::Test> tests{};
+  auto all_tests = re::registry();
+  std::vector<re::Test> tests{};
   for (auto test_def : all_tests) {
     auto test = test_def();
     if (!filter.empty()) {
@@ -74,15 +79,15 @@ int main(int argc, char** argv) {
   if (use_xml) {
     if (xml_file) {
       auto file_stream = std::ofstream(*xml_file);
-      auto reporter    = retest::impl::JUnitXmlReporter(file_stream);
-      result           = retest::run(tests, reporter);
+      auto reporter    = re::impl::JUnitXmlReporter(file_stream);
+      result           = re::run(tests, reporter);
     } else {
-      auto reporter = retest::impl::JUnitXmlReporter(std::cout);
-      result        = retest::run(tests, reporter);
+      auto reporter = re::impl::JUnitXmlReporter(std::cout);
+      result        = re::run(tests, reporter);
     }
   } else {
-    auto reporter = retest::_impl::ConsoleReporter();
-    result        = retest::run(tests, reporter);
+    auto reporter = re::_impl::ConsoleReporter();
+    result        = re::run(tests, reporter);
   }
 
   return result ? 0 : 1;

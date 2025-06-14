@@ -3,7 +3,7 @@
 #include <string_view>
 #include <experimental/meta>
 
-namespace retest::_impl {
+namespace re::_impl {
 template <typename T>
 consteval bool has_annotation(std::meta::info R) {
   return !annotations_of(R, dealias(^^T)).empty();
@@ -52,4 +52,4 @@ constexpr std::uint32_t fnv1a(std::string_view str) {
   return fnv1a(str.begin(), str.size());
 }
 
-}  // namespace retest::_impl
+}  // namespace re::_impl

@@ -1,8 +1,8 @@
 #include <retest.hpp>
 
 namespace foo {
-[[= retest::test]]
-[[= retest::expect_failure]]
+[[= re::test]]
+[[= re::expect_failure]]
 void always_fails() {
     ASSERT(false, "oh no");
 }

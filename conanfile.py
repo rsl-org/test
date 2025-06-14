@@ -32,6 +32,7 @@ class retestRecipe(ConanFile):
 
     def requirements(self):
         self.requires("libassert/2.1.5")
+        # self.requires("rsl/0.1")
     
     def layout(self):
         cmake_layout(self)

@@ -3,7 +3,7 @@
 #include <tuple>
 #include <ranges>
 
-namespace retest {
+namespace re {
 template <typename... Ts>
 constexpr std::vector<std::tuple<Ts...>> cartesian_product(std::vector<Ts> const&... vs) {
   // if any input is empty, the product is empty
@@ -35,4 +35,4 @@ template <typename... Ts>
 constexpr std::vector<std::tuple<Ts...>> cartesian_product(std::initializer_list<Ts> const&... vs) {
   return cartesian_product(std::vector(vs)...);
 }
-}  // namespace retest
+}  // namespace re

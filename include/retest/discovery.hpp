@@ -16,7 +16,7 @@
 #include <retest/test.hpp>
 
 
-namespace retest {
+namespace re {
 namespace _impl {
 template <std::meta::info R>
 consteval std::vector<std::meta::info> expand_test() {
@@ -107,4 +107,4 @@ bool enable_tests() {
   return true;
 }
 
-}  // namespace retest
+}  // namespace re

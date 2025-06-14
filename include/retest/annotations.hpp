@@ -6,7 +6,7 @@
 
 #include <retest/_impl/util.hpp>
 
-namespace retest {
+namespace re {
 namespace _impl {
 template <typename T, std::meta::info Set>
 T param_set_to_tuple() {
@@ -147,4 +147,4 @@ void make_calls() {
   }
 }
 
-}  // namespace retest
+}  // namespace re
