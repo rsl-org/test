@@ -15,10 +15,10 @@ void failure_handler(libassert::assertion_info const& info) {
   message += "\n";
   message += info.statement(scheme) + info.print_binary_diagnostics(width, scheme) +
              info.print_extra_diagnostics(width, scheme);
-  throw re::assertion_failure(message);
+  throw rsl::assertion_failure(message);
 }
 
-namespace re {
+namespace rsl {
 
 bool run(std::vector<Test> const& tests, Reporter& reporter) {
   reporter.on_start(tests.size());
@@ -68,4 +68,4 @@ TestResult Test::TestRun::run() const {
   ret.passed = test->expect_failure;
   return ret;
 }
-}  // namespace re
+}  // namespace rsl

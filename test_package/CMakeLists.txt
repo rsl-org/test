@@ -5,7 +5,7 @@ project(PackageTest CXX)
 find_package(retest CONFIG REQUIRED)
 
 add_executable(example src/example.cpp)
-target_link_libraries(example re::retest)
+target_link_libraries(example rsl::retest)
 
 target_compile_options(example PUBLIC 
   "-stdlib=libc++"

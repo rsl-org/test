@@ -2,7 +2,7 @@
 #include <retest/reporter.hpp>
 #include <iostream>
 
-namespace re::impl {
+namespace rsl::impl {
 class JUnitXmlReporter : public Reporter {
   std::ostream& out_;
 
@@ -31,4 +31,4 @@ public:
   void on_summary(const std::vector<TestResult>&) override {}
   [[nodiscard]] bool colorize() const override { return false; }
 };
-}  // namespace re::impl
+}  // namespace rsl::impl

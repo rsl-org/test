@@ -55,8 +55,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto all_tests = re::registry();
-  std::vector<re::Test> tests{};
+  auto all_tests = rsl::registry();
+  std::vector<rsl::Test> tests{};
   for (auto test_def : all_tests) {
     auto test = test_def();
     if (!filter.empty()) {
@@ -79,15 +79,15 @@ int main(int argc, char** argv) {
   if (use_xml) {
     if (xml_file) {
       auto file_stream = std::ofstream(*xml_file);
-      auto reporter    = re::impl::JUnitXmlReporter(file_stream);
-      result           = re::run(tests, reporter);
+      auto reporter    = rsl::impl::JUnitXmlReporter(file_stream);
+      result           = rsl::run(tests, reporter);
     } else {
-      auto reporter = re::impl::JUnitXmlReporter(std::cout);
-      result        = re::run(tests, reporter);
+      auto reporter = rsl::impl::JUnitXmlReporter(std::cout);
+      result        = rsl::run(tests, reporter);
     }
   } else {
-    auto reporter = re::_impl::ConsoleReporter();
-    result        = re::run(tests, reporter);
+    auto reporter = rsl::_impl::ConsoleReporter();
+    result        = rsl::run(tests, reporter);
   }
 
   return result ? 0 : 1;

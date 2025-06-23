@@ -10,7 +10,7 @@
 
 #include <libassert/assert.hpp>
 
-namespace re {
+namespace rsl {
 struct assertion_failure : std::runtime_error {
   using std::runtime_error::runtime_error;
 };
@@ -163,4 +163,4 @@ consteval TestDef make_test(std::meta::info R) {
   return extract<TestDef>(substitute(^^make_test_impl, {reflect_constant(R)}));
 }
 }  // namespace _impl
-}  // namespace re
+}  // namespace rsl

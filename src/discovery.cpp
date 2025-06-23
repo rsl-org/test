@@ -1,6 +1,6 @@
 #include <retest/discovery.hpp>
 
-std::set<re::TestDef>& re::registry() {
+std::set<rsl::TestDef>& rsl::registry() {
   static std::set<TestDef> test_registry;
   return test_registry;
 }
