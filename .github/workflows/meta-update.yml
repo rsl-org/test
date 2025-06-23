@@ -9,3 +9,4 @@ on:
 jobs:
   trigger:
     uses: tsche/re/.github/workflows/trigger-update.yml@master
+    secrets: inherit
