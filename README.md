@@ -1,4 +1,4 @@
-# retest - a **re**flective **test** framework
+# rsl::test - a reflective test framework
 
 A modern, reflective C++ unit test framework.
 
@@ -9,20 +9,20 @@ By default, tests need to be in _some_ namespace. This can be an anonymous names
 If you wish to declare tests in the global namespace, define `RETEST_SCAN_GLOBAL_NAMESPACE` _before_ including `retest.hpp` or any other retest headers. Note that this might result in hitting the constexpr step limit - you can override it by compiling with `-fconstexpr-steps=10000000` or higher.
 
 #### Automatic test discovery
-To enable automatic discovery, include `<retest.hpp>` as follows:
+To enable automatic discovery, include `<rsl/test>` as follows:
 ```cpp
-#include <retest.hpp>
+#include <rsl/test>
 
 namespace foo {
-[[=re::test]]
-[[=re::expect_failure]]
+[[=rsl::test]]
+[[=rsl::expect_failure]]
 void always_fails() {
     ASSERT(false, "oh no");
 }
 }  // namespace foo
 ```
 
-The `re::test` annotation flags this function as a test. It must return void, failure is signalled by throwing an exception (which is what happens on assertion failure). `re::expect_failure` makes the test fail if no failure exception was thrown.
+The `rsl::test` annotation flags this function as a test. It must return void, failure is signalled by throwing an exception (which is what happens on assertion failure). `rsl::expect_failure` makes the test fail if no failure exception was thrown.
 
 #### Manual test discovery
 
@@ -30,11 +30,11 @@ Automatic test discovery walks all namespaces starting from the global namespace
 
 To do this use `RETEST_ENABLE_NS` as last statement in your test TU.
 ```cpp
-#include <retest/all.hpp>
+#include <rsl/test/all.hpp>
 
 namespace testing {
 
-[[=re::test]] 
+[[=rsl::test]] 
 void always_passes() {}
 
 }  // namespace testing
@@ -48,7 +48,7 @@ Note that including `<retest/all.hpp>` instead of `<retest.hpp>` will not run th
 Tests can be parameterized.
 #### Arguments
 ```cpp
-#include <retest.hpp>
+#include <rsl/test>
 #include <tuple>
 
 namespace {
@@ -56,10 +56,10 @@ std::vector<std::tuple<char, int>> make_params() {
     return {{'f', 13}, {'e', 14}};
 }
 
-[[=re::test]]
-[[=re::params({std::tuple{'a', 10}, {'c', 12}})]]
-[[=re::params(re::cartesian_product({'a', 'c'}, {10, 15, 20}))]]
-[[=re::params(make_params)]]
+[[=rsl::test]]
+[[=rsl::params({std::tuple{'a', 10}, {'c', 12}})]]
+[[=rsl::params(rsl::cartesian_product({'a', 'c'}, {10, 15, 20}))]]
+[[=rsl::params(make_params)]]
 void test_with_params(char foo, int bar){
     ASSERT(bar > 5);
     ASSERT(foo != 'x');
@@ -67,16 +67,16 @@ void test_with_params(char foo, int bar){
 }  // namespace
 ```
 
-`re::params` accepts vectors or initializer lists of `std::tuple<Args...>` (where `Args` is the test's parameter types). Additionally you can provide a pointer to a function which returns a vector of aforementioned tuple type. Multiple `re::params` annotations will be chained.
+`rsl::params` accepts vectors or initializer lists of `std::tuple<Args...>` (where `Args` is the test's parameter types). Additionally you can provide a pointer to a function which returns a vector of aforementioned tuple type. Multiple `rsl::params` annotations will be chained.
 
 #### Template Arguments
 ```cpp
-#include <retest.hpp>
+#include <rsl/test>
 #include <tuple>
 
 namespace {
-[[=re::test]]
-[[=re::tparams({std::tuple{^^int, 10}, {^^float, 21}})]]
+[[=rsl::test]]
+[[=rsl::tparams({std::tuple{^^int, 10}, {^^float, 21}})]]
 constexpr inline auto tparam_gt_5 = []<typename T, int I>() static {
     ASSERT(I > 5);
 };
@@ -86,19 +86,19 @@ constexpr inline auto tparam_gt_5 = []<typename T, int I>() static {
 Unfortunately template reflection is not scheduled for C++26. This is problematic, since it means we cannot retrieve annotations from templates. To work around this, it is possible to use a `static` lambda. The semantics of `tparams` are similar to `params`, however function pointers are not accepted.
 
 ### Fixtures
-Tests that have no `re::params` annotations can use fixtures instead.
+Tests that have no `rsl::params` annotations can use fixtures instead.
 
 ```cpp
-#include <retest.hpp>
+#include <rsl/test>
 
 namespace {
-[[=re::fixture]]
+[[=rsl::fixture]]
 int meta_fixture() { return 21; }
 
-[[=re::fixture]]
+[[=rsl::fixture]]
 int fixture(int meta_fixture) { return meta_fixture * 2; }
 
-[[=re::test]]
+[[=rsl::test]]
 void test_with_fixture(int fixture){
     ASSERT(fixture > 5);
 };
