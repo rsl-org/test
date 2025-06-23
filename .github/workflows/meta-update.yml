@@ -1,0 +1,10 @@
+name: Trigger Meta Update
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  trigger:
+    uses: tsche/re/.github/workflows/trigger-update.yml@master
