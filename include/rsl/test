@@ -1,0 +1,7 @@
+#pragma once 
+
+#include <rsl/testing/all.hpp>
+
+#ifndef RSLTEST_SKIP
+RSLTEST_ENABLE
+#endif

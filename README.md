@@ -6,7 +6,7 @@ A modern, reflective C++ unit test framework.
 ### Simple tests
 By default, tests need to be in _some_ namespace. This can be an anonymous namespace. 
 
-If you wish to declare tests in the global namespace, define `RETEST_SCAN_GLOBAL_NAMESPACE` _before_ including `retest.hpp` or any other retest headers. Note that this might result in hitting the constexpr step limit - you can override it by compiling with `-fconstexpr-steps=10000000` or higher.
+If you wish to declare tests in the global namespace, define `RSLTEST_SCAN_GLOBAL_NAMESPACE` _before_ including `rsltest.hpp` or any other rsltest headers. Note that this might result in hitting the constexpr step limit - you can override it by compiling with `-fconstexpr-steps=10000000` or higher.
 
 #### Automatic test discovery
 To enable automatic discovery, include `<rsl/test>` as follows:
@@ -28,9 +28,9 @@ The `rsl::test` annotation flags this function as a test. It must return void, f
 
 Automatic test discovery walks all namespaces starting from the global namespace. Since this needs to happen in every TU, it can make compilation rather slow. It is possible to manually select a namespace to search for tests in.
 
-To do this use `RETEST_ENABLE_NS` as last statement in your test TU.
+To do this use `RSLTEST_ENABLE_NS` as last statement in your test TU.
 ```cpp
-#include <rsl/test/all.hpp>
+#include <rsl/testing/all.hpp>
 
 namespace testing {
 
@@ -39,10 +39,10 @@ void always_passes() {}
 
 }  // namespace testing
 
-RETEST_ENABLE_NS(testing)
+RSLTEST_ENABLE_NS(testing)
 ```
 
-Note that including `<retest/all.hpp>` instead of `<retest.hpp>` will not run the automatic test discovery. You can achieve the same effect by defining `RETEST_SKIP` before including `<retest.hpp>`.
+Note that including `<rsl/testing/all.hpp>` instead of `<rsl/test.hpp>` will not run the automatic test discovery. You can achieve the same effect by defining `RSLTEST_SKIP` before including `<rsl/test.hpp>`.
 
 ### Test parameterization
 Tests can be parameterized.

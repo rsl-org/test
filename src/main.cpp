@@ -1,5 +1,5 @@
-#define RETEST_SKIP
-#include <retest.hpp>
+#define RSLTEST_SKIP
+#include <rsl/test>
 
 #include <fstream>
 #include <regex>

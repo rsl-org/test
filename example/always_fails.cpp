@@ -1,4 +1,4 @@
-#include <retest.hpp>
+#include <rsl/test>
 
 namespace foo {
 [[= rsl::test]]

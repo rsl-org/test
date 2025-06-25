@@ -1,5 +1,5 @@
-#define RETEST_SKIP
-#include <retest.hpp>
+#define RSLTEST_SKIP
+#include <rsl/test>
 
 namespace testing {
 
@@ -8,4 +8,4 @@ void always_passes() {}
 
 }  // namespace testing
 
-RETEST_ENABLE_NS(testing)
+RSLTEST_ENABLE_NS(testing)

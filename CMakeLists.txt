@@ -4,35 +4,38 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 26)
 
-project(retest CXX)
-add_library(retest)
+project(rsltest CXX)
+add_library(rsltest SHARED)
 
-
-target_compile_options(retest PUBLIC 
+set_target_properties(rsltest PROPERTIES OUTPUT_NAME rsltest)
+target_compile_options(rsltest PUBLIC 
   "-stdlib=libc++"
   "-freflection"
   "-fannotation-attributes"
   "-fparameter-reflection"
   "-fexpansion-statements"
-  "-Wno-c++26-extensions"
-  "-ftime-trace"
+  # "-Wno-c++26-extensions"
+  # "-ftime-trace"
   # "-fconstexpr-steps=10000000" # required to scan the global namespace
 )
-target_link_options(retest PUBLIC "-stdlib=libc++" "-lc++abi")
-target_include_directories(retest PUBLIC 
+target_link_options(rsltest PUBLIC "-stdlib=libc++" "-lc++abi")
+target_include_directories(rsltest PUBLIC 
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
 find_package(libassert REQUIRED)
-target_link_libraries(retest libassert::assert)
+target_link_libraries(rsltest PUBLIC libassert::assert)
 
 # find_package(rsl REQUIRED)
-# target_link_libraries(retest rsl::rsl)
+# target_link_libraries(rsltest rsl::rsl)
 
+add_library(rsltest_main)
+target_link_libraries(rsltest_main PUBLIC rsltest)
 add_subdirectory(src)
 
-install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/ DESTINATION include)
-install(TARGETS retest)
+install(TARGETS rsltest_main)
+install(TARGETS rsltest)
+install(DIRECTORY include/ DESTINATION include)
 
 option(BUILD_TESTING "Enable tests" ON)
 option(ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
@@ -40,17 +43,19 @@ option(ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
 if (BUILD_TESTING)
   message(STATUS "Building unit tests")
 
-  add_executable(retest_test "")
-  add_subdirectory(test)
-  target_link_libraries(retest_test PRIVATE retest)
+  add_executable(rsltest_example "")
+  add_subdirectory(example)
+  # target_compile_definitions(rsltest_test PRIVATE RSL_TEST_NAMESPACE=testing)
+  target_link_libraries(rsltest_example PRIVATE rsltest)
+  target_link_libraries(rsltest_example PRIVATE rsltest_main)
   
   enable_testing()
-  add_test(NAME retest_test COMMAND retest_test)
+  add_test(NAME rsltest_example COMMAND rsltest_example)
 
   if(ENABLE_COVERAGE)
     message(STATUS "Instrumenting for coverage")  
 
-    target_compile_options(rsl_test PRIVATE -g -O0 --coverage)
-    target_link_libraries(rsl_test PRIVATE --coverage)
+    target_compile_options(rsltest PRIVATE -g -O0 --coverage)
+    target_link_libraries(rsltest PRIVATE --coverage)
   endif()
 endif()

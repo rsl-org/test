@@ -2,8 +2,8 @@ from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 
 
-class retestRecipe(ConanFile):
-    name = "retest"
+class rsltestRecipe(ConanFile):
+    name = "rsl-test"
     version = "0.1"
     package_type = "library"
 
@@ -16,11 +16,16 @@ class retestRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {"shared": False, "fPIC": True}
+    options = {
+        "shared": [True, False], "fPIC": [True, False],
+        "coverage": [True, False],
+        "examples": [True, False]
+    }
+
+    default_options = {"shared": False, "fPIC": True, "coverage": False, "examples": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
-    exports_sources = "CMakeLists.txt", "src/*", "include/*"
+    exports_sources = "CMakeLists.txt", "src/*", "include/*", "example/*", "test/*"
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -31,7 +36,7 @@ class retestRecipe(ConanFile):
             self.options.rm_safe("fPIC")
 
     def requirements(self):
-        self.requires("libassert/2.1.5")
+        self.requires("libassert/2.1.5", transitive_headers=True, transitive_libs=True)
         # self.requires("rsl/0.1")
     
     def layout(self):
@@ -45,7 +50,11 @@ class retestRecipe(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        cmake.configure()
+        cmake.configure(variables={
+                    "ENABLE_COVERAGE": self.options.coverage,
+                    "ENABLE_EXAMPLES": self.options.examples,
+                    "BUILD_TESTING": not self.conf.get("tools.build:skip_test", default=False)
+                })
         cmake.build()
 
     def package(self):
@@ -53,5 +62,16 @@ class retestRecipe(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = ["retest"]
+        self.cpp_info.components["test"].set_property("cmake_target_name", "rsl::test")
+        self.cpp_info.components["test"].includedirs = ["include"]
+        self.cpp_info.components["test"].libdirs = ["lib"]
+        self.cpp_info.components["test"].requires = ["libassert::assert"]
+        self.cpp_info.components["test"].libs = ["rsltest"]
+
+        self.cpp_info.components["test_main"].set_property("cmake_target_name", "rsl::test_main")
+        self.cpp_info.components["test_main"].includedirs = ["include"]
+        self.cpp_info.components["test_main"].libdirs = ["lib"]
+        self.cpp_info.components["test_main"].requires = ["test"] # depend on primary component
+        self.cpp_info.components["test_main"].libs = ["rsltest_main"]
+
 

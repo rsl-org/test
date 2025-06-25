@@ -4,16 +4,16 @@
 #include <cstddef>
 #include <set>
 
-#include <experimental/meta>
+#include <meta>
 
-#ifndef RETEST_SCAN_GLOBAL_NAMESPACE
-#  define RETEST_SCAN_GLOBAL_NAMESPACE 0
+#ifndef RSLTEST_SCAN_GLOBAL_NAMESPACE
+#  define RSLTEST_SCAN_GLOBAL_NAMESPACE 0
 #endif
 
-#include <retest/_impl/util.hpp>
-#include <retest/annotations.hpp>
-#include <retest/fixture.hpp>
-#include <retest/test.hpp>
+#include <rsl/testing/_impl/util.hpp>
+#include <rsl/testing/annotations.hpp>
+#include <rsl/testing/fixture.hpp>
+#include <rsl/testing/test.hpp>
 
 
 namespace rsl {
@@ -96,7 +96,7 @@ bool enable_namespace() {
 
 template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_tests() {
-  if constexpr (NS != ^^:: || RETEST_SCAN_GLOBAL_NAMESPACE) {
+  if constexpr (NS != ^^:: || RSLTEST_SCAN_GLOBAL_NAMESPACE) {
     enable_namespace<NS, TUTag>();
   }
 
