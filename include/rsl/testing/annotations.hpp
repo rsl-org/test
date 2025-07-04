@@ -3,6 +3,7 @@
 #include <meta>
 #include <tuple>
 #include <vector>
+#include <ranges>
 
 #include <rsl/testing/_impl/util.hpp>
 

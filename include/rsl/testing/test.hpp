@@ -2,10 +2,11 @@
 #include <string>
 #include <functional>
 #include <meta>
+#include <ranges>
 
 #include <rsl/testing/annotations.hpp>
-#include <rsl/testing/fixture.hpp>
-#include <rsl/testing/reporter.hpp>
+#include <rsl/testing/test.hpp>
+#include <rsl/testing/_impl/fixture.hpp>
 #include <rsl/testing/_impl/util.hpp>
 
 #include <libassert/assert.hpp>

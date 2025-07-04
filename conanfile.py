@@ -22,7 +22,7 @@ class rsltestRecipe(ConanFile):
         "examples": [True, False]
     }
 
-    default_options = {"shared": False, "fPIC": True, "coverage": False, "examples": True}
+    default_options = {"shared": False, "fPIC": True, "coverage": False, "examples": False}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt", "src/*", "include/*", "example/*", "test/*"
@@ -52,7 +52,7 @@ class rsltestRecipe(ConanFile):
         cmake = CMake(self)
         cmake.configure(variables={
                     "ENABLE_COVERAGE": self.options.coverage,
-                    "ENABLE_EXAMPLES": self.options.examples,
+                    "BUILD_EXAMPLES": self.options.examples,
                     "BUILD_TESTING": not self.conf.get("tools.build:skip_test", default=False)
                 })
         cmake.build()

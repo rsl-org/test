@@ -5,7 +5,6 @@
 
 #include <rsl/testing/annotations.hpp>
 #include <rsl/testing/discovery.hpp>
-#include <rsl/testing/reporter.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/util.hpp>
 

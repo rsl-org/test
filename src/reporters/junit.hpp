@@ -1,5 +1,5 @@
 #pragma once
-#include <rsl/testing/reporter.hpp>
+#include <rsl/testing/test.hpp>
 #include <iostream>
 
 namespace rsl::impl {

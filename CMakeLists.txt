@@ -59,3 +59,7 @@ if (BUILD_TESTING)
     target_link_libraries(rsltest PRIVATE --coverage)
   endif()
 endif()
+
+if (BUILD_EXAMPLES)
+  add_subdirectory(example)
+endif()

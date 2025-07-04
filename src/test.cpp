@@ -1,7 +1,7 @@
+#include <algorithm>
 
 #include <libassert/assert.hpp>
 #include <rsl/testing/all.hpp>
-#include <rsl/testing/reporter.hpp>
 
 template <bool Colorize>
 void failure_handler(libassert::assertion_info const& info) {
