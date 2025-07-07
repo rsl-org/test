@@ -79,14 +79,14 @@ int main(int argc, char** argv) {
   if (use_xml) {
     if (xml_file) {
       auto file_stream = std::ofstream(*xml_file);
-      auto reporter    = rsl::impl::JUnitXmlReporter(file_stream);
+      auto reporter    = rsl::_testing_impl::JUnitXmlReporter(file_stream);
       result           = rsl::run(tests, reporter);
     } else {
-      auto reporter = rsl::impl::JUnitXmlReporter(std::cout);
+      auto reporter = rsl::_testing_impl::JUnitXmlReporter(std::cout);
       result        = rsl::run(tests, reporter);
     }
   } else {
-    auto reporter = rsl::_impl::ConsoleReporter();
+    auto reporter = rsl::_testing_impl::ConsoleReporter();
     result        = rsl::run(tests, reporter);
   }
 

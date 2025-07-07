@@ -15,9 +15,8 @@
 #include <rsl/testing/_impl/fixture.hpp>
 #include <rsl/testing/_impl/util.hpp>
 
-
 namespace rsl {
-namespace _impl {
+namespace _testing_impl {
 template <std::meta::info R>
 consteval std::vector<std::meta::info> expand_test() {
   if (is_function(R)) {
@@ -37,9 +36,7 @@ consteval std::vector<std::meta::info> expand_test() {
     std::unreachable();
   }
 }
-}  // namespace _impl
 
-namespace _impl {
 consteval std::vector<TestDef> expand_class(std::meta::info class_r) {
   std::vector<TestDef> tests{};
 
@@ -80,13 +77,13 @@ consteval std::vector<TestDef> discover_tests(std::meta::info target_namespace) 
   }
   return tests;
 }
-}  // namespace _impl
+}  // namespace _testing_impl
 
 std::set<TestDef>& registry();
 
 template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_namespace() {
-  constexpr auto tests = define_static_array(_impl::discover_tests<TUTag>(NS));
+  constexpr auto tests = define_static_array(_testing_impl::discover_tests<TUTag>(NS));
   for (auto const& test : tests) {
     registry().insert(test);
   }
@@ -100,7 +97,8 @@ bool enable_tests() {
     enable_namespace<NS, TUTag>();
   }
 
-  constexpr static auto namespaces = define_static_array(_impl::enumerate_namespaces<TUTag>(NS));
+  constexpr static auto namespaces =
+      define_static_array(_testing_impl::enumerate_namespaces<TUTag>(NS));
   template for (constexpr auto namespace_ : namespaces) {
     enable_namespace<namespace_, TUTag>();
   }

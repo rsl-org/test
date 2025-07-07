@@ -8,7 +8,7 @@
 #include <rsl/testing/_impl/util.hpp>
 
 namespace rsl {
-namespace _impl {
+namespace _testing_impl {
 template <typename T, std::meta::info Set>
 T param_set_to_tuple() {
   constexpr static auto args = [:Set:];
@@ -48,7 +48,7 @@ constexpr std::vector<TestInstance> tparam_generator(std::meta::info fnc) {
   std::vector<TestInstance> ret;
   auto base_name = identifier_of(fnc);
   template for (constexpr auto set : [:Sets:]) {
-    auto name = base_name + stringify_targs([:set:]);
+    auto name     = base_name + stringify_targs([:set:]);
     auto instance = substitute(get_operator(fnc, std::meta::operators::op_parentheses), [:set:]);
     ret.emplace_back(define_static_string(name), instance);
   }
@@ -56,7 +56,8 @@ constexpr std::vector<TestInstance> tparam_generator(std::meta::info fnc) {
 }
 
 template <typename... Ts>
-consteval std::meta::info reflect_tuple(std::tuple<Ts...> const& tup, bool reflect_reflections = true) {
+consteval std::meta::info reflect_tuple(std::tuple<Ts...> const& tup,
+                                        bool reflect_reflections = true) {
   std::array<std::meta::info, sizeof...(Ts)> reflected_element;
   template for (constexpr auto Idx : std::views::iota(0zu, sizeof...(Ts))) {
     if constexpr (std::same_as<Ts...[Idx], std::meta::info>) {
@@ -72,8 +73,7 @@ consteval std::meta::info reflect_tuple(std::tuple<Ts...> const& tup, bool refle
   return std::meta::reflect_constant_array(reflected_element);
 }
 
-
-}  // namespace _impl
+}  // namespace _testing_impl
 
 namespace annotations {
 
@@ -93,12 +93,12 @@ struct Params {
   consteval explicit Params(std::vector<std::tuple<Ts...>> const& param_sets) {
     std::vector<std::meta::info> params = {};
     for (auto const& element : param_sets) {
-      params.push_back(_impl::reflect_tuple(element));
+      params.push_back(_testing_impl::reflect_tuple(element));
     }
 
     auto arg_tuple = substitute(^^std::tuple, {^^Ts...});
     generator =
-        substitute(^^_impl::param_generator,
+        substitute(^^_testing_impl::param_generator,
                    {arg_tuple, reflect_constant(std::meta::reflect_constant_array(params))});
   }
 
@@ -118,10 +118,10 @@ struct TParams {
   consteval explicit TParams(std::vector<std::tuple<Ts...>> const& param_sets) {
     std::vector<std::meta::info> params = {};
     for (auto const& element : param_sets) {
-      params.push_back(_impl::reflect_tuple(element, false));
+      params.push_back(_testing_impl::reflect_tuple(element, false));
     }
 
-    generator = substitute(^^_impl::tparam_generator,
+    generator = substitute(^^_testing_impl::tparam_generator,
                            {reflect_constant(std::meta::reflect_constant_array(params))});
   }
 
@@ -130,12 +130,10 @@ struct TParams {
       : TParams(std::vector<std::tuple<Ts...>>{param_sets}) {}
 };
 
-using params = Params;
+using params  = Params;
 using tparams = TParams;
 
 }  // namespace annotations
-
-
 
 template <std::meta::info R>
 void make_calls() {

@@ -42,7 +42,7 @@ class Test {
 
     [[nodiscard]] TestResult run() const;
 
-    template <_impl::TestInstance F, std::meta::info R>
+    template <_testing_impl::TestInstance F, std::meta::info R>
     struct Setter {
       using arg_tuple = [:substitute(
                               ^^std::tuple,
@@ -50,7 +50,7 @@ class Test {
 
       static std::vector<arg_tuple> expand_parameters() {
         std::vector<arg_tuple> arg_sets;
-        if constexpr (_impl::has_annotation<annotations::Params>(R)) {
+        if constexpr (_testing_impl::has_annotation<annotations::Params>(R)) {
           // expand params
           template for (constexpr auto annotation :
                         std::define_static_array(annotations_of(R, ^^annotations::Params))) {
@@ -59,7 +59,7 @@ class Test {
           }
         } else {
           // expand fixtures
-          arg_sets.push_back(_impl::evaluate_fixtures<F.fnc>());
+          arg_sets.push_back(_testing_impl::evaluate_fixtures<F.fnc>());
         }
         return arg_sets;
       }
@@ -102,7 +102,7 @@ class Test {
     };
   };
 
-  template <_impl::TestInstance F, std::meta::info R>
+  template <_testing_impl::TestInstance F, std::meta::info R>
   std::vector<TestRun> runner() const {
     return TestRun::Setter<F, R>::make(this);
   }
@@ -111,12 +111,12 @@ class Test {
 
   consteval static std::vector<runner_type> expand_targs(std::meta::info R) {
     if (is_function(R)) {
-      auto instance = _impl::TestInstance{define_static_string(display_string_of(R)), R};
-      return {
-          extract<runner_type>(substitute(^^runner, {std::meta::reflect_constant(instance), reflect_constant(R)}))};
-    } else if (is_variable(R) && _impl::has_annotation<annotations::TParams>(R)) {
-      std::vector<_impl::TestInstance> instantiations;
-      using generator_type = std::vector<_impl::TestInstance> (*)(std::meta::info);
+      auto instance = _testing_impl::TestInstance{define_static_string(display_string_of(R)), R};
+      return {extract<runner_type>(
+          substitute(^^runner, {std::meta::reflect_constant(instance), reflect_constant(R)}))};
+    } else if (is_variable(R) && _testing_impl::has_annotation<annotations::TParams>(R)) {
+      std::vector<_testing_impl::TestInstance> instantiations;
+      using generator_type = std::vector<_testing_impl::TestInstance> (*)(std::meta::info);
 
       for (auto annotation : annotations_of(R, ^^annotations::TParams)) {
         auto params    = extract<annotations::TParams>(annotation);
@@ -146,7 +146,7 @@ public:
   Test() = delete;
   consteval explicit Test(std::meta::info test)
       : name{define_static_string(identifier_of(test))}
-      , expect_failure{_impl::has_annotation<annotations::ExpectFailureTag>(test)} {
+      , expect_failure{_testing_impl::has_annotation<annotations::ExpectFailureTag>(test)} {
     run_fncs = define_static_array(expand_targs(test));
   }
   [[nodiscard]] std::vector<TestRun> get_tests() const;
@@ -154,7 +154,7 @@ public:
 
 using TestDef = Test (*)();
 
-namespace _impl {
+namespace _testing_impl {
 template <std::meta::info R>
 Test make_test_impl() {
   return Test(R);
@@ -163,5 +163,5 @@ Test make_test_impl() {
 consteval TestDef make_test(std::meta::info R) {
   return extract<TestDef>(substitute(^^make_test_impl, {reflect_constant(R)}));
 }
-}  // namespace _impl
+}  // namespace _testing_impl
 }  // namespace rsl

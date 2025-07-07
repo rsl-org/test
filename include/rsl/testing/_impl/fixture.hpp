@@ -4,7 +4,7 @@
 
 #include <rsl/testing/_impl/util.hpp>
 
-namespace rsl::_impl {
+namespace rsl::_testing_impl {
 template <std::size_t Idx>
 struct Fixture {
   friend decltype(auto) evaluate_fixture_impl(Fixture);
@@ -30,4 +30,4 @@ consteval void enable_fixture(std::meta::info R) {
   // force `evaluate_fixture` into existence
   (void)is_complete_type(substitute(^^FixtureEnabler, {reflect_constant(R)}));
 }
-}
+}  // namespace rsl::_testing_impl

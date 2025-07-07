@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <libassert/assert.hpp>
 
-namespace rsl::_impl {
+namespace rsl::_testing_impl {
 class ConsoleReporter : public Reporter {
 public:
   void on_start(size_t total) override { std::print("Running {} tests...\n", total); }

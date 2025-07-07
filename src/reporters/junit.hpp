@@ -2,7 +2,7 @@
 #include <rsl/testing/test.hpp>
 #include <iostream>
 
-namespace rsl::impl {
+namespace rsl::_testing_impl {
 class JUnitXmlReporter : public Reporter {
   std::ostream& out_;
 
