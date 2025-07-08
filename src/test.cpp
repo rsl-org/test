@@ -1,3 +1,4 @@
+#include "rsl/testing/test.hpp"
 #include <algorithm>
 
 #include <libassert/assert.hpp>
@@ -15,10 +16,10 @@ void failure_handler(libassert::assertion_info const& info) {
   message += "\n";
   message += info.statement(scheme) + info.print_binary_diagnostics(width, scheme) +
              info.print_extra_diagnostics(width, scheme);
-  throw rsl::assertion_failure(message);
+  throw rsl::testing::assertion_failure(message);
 }
 
-namespace rsl {
+namespace rsl::testing {
 
 bool run(std::vector<Test> const& tests, Reporter& reporter) {
   reporter.on_start(tests.size());
@@ -42,7 +43,7 @@ bool run(std::vector<Test> const& tests, Reporter& reporter) {
 
 std::vector<Test::TestRun> Test::get_tests() const {
   std::vector<TestRun> tests{};
-  for (auto fnc : run_fncs){
+  for (auto fnc : run_fncs) {
     tests.append_range((this->*fnc)());
   }
   return tests;
@@ -68,4 +69,71 @@ TestResult Test::TestRun::run() const {
   ret.passed = test->expect_failure;
   return ret;
 }
-}  // namespace rsl
+
+TestNamespace::iterator::iterator(TestNamespace const& ns) {
+  flatten(ns);
+  current = elements.front();
+  elements.pop_front();
+}
+
+void TestNamespace::iterator::flatten(TestNamespace const& current) {
+  for (auto const& ns : current.children) {
+    flatten(ns);
+  }
+  if (!current.tests.empty()) {
+    elements.push_back({current.tests.begin(), current.tests.end()});
+  }
+}
+
+TestNamespace::iterator& TestNamespace::iterator::operator++() {
+  if (current.it == current.end) {
+    if (elements.empty()) {
+      current = {};
+      return *this;
+    }
+
+    current = elements.front();
+    elements.pop_front();
+  } else {
+    ++current.it;
+    if (current.it == current.end) {
+      return ++*this;
+    }
+  }
+  return *this;
+}
+
+bool TestNamespace::iterator::operator==(iterator const& other) const {
+  if (current.it != other.current.it || current.end != other.current.end) {
+    return false;
+  }
+  return elements == other.elements;
+}
+
+void TestNamespace::insert(Test const& test, std::size_t i) {
+  if (i == test.full_name.size()) {
+    tests.push_back(test);
+    return;
+  }
+
+  auto it = std::ranges::find_if(children, [&](const TestNamespace& ns) {
+    return ns.name == test.full_name[i];
+  });
+
+  if (it == children.end()) {
+    children.emplace_back(test.full_name[i]);
+    it = std::prev(children.end());
+  }
+
+  it->insert(test, i + 1);
+}
+
+TestNamespace get_tests() {
+  TestNamespace root;
+  for (auto test_def : rsl::testing::registry()) {
+    auto test = test_def();
+    root.insert(test);
+  }
+  return root;
+}
+}  // namespace rsl::testing

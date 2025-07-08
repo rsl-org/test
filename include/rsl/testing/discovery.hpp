@@ -15,7 +15,7 @@
 #include <rsl/testing/_impl/fixture.hpp>
 #include <rsl/testing/_impl/util.hpp>
 
-namespace rsl {
+namespace rsl::testing {
 namespace _testing_impl {
 template <std::meta::info R>
 consteval std::vector<std::meta::info> expand_test() {
@@ -105,4 +105,4 @@ bool enable_tests() {
   return true;
 }
 
-}  // namespace rsl
+}  // namespace rsl::testing

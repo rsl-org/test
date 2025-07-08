@@ -7,7 +7,7 @@
 
 #include <rsl/testing/_impl/util.hpp>
 
-namespace rsl {
+namespace rsl::testing {
 namespace _testing_impl {
 template <typename T, std::meta::info Set>
 T param_set_to_tuple() {

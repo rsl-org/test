@@ -9,16 +9,18 @@
 #include <rsl/testing/util.hpp>
 
 namespace rsl {
+namespace testing {
 bool run(std::vector<Test> const& tests, Reporter& reporter);
+}
 
-using annotations::fixture;
-using annotations::test;
+using testing::annotations::fixture;
+using testing::annotations::test;
+using testing::annotations::expect_failure;
+using testing::annotations::params;
+using testing::annotations::tparams;
 
-using annotations::expect_failure;
-using annotations::params;
-using annotations::tparams;
+}  // namespace rsl::testing
 
-}  // namespace rsl
 
 #ifndef RSLTEST_IMPL_USED
 #  if defined(__GNUC__) || defined(__clang__)
@@ -28,15 +30,15 @@ using annotations::tparams;
 #  endif
 #endif
 
-#define RSLTEST_ENABLE_NS(NS)                                                   \
-  namespace {                                                                   \
-  RSLTEST_IMPL_USED [[maybe_unused]] static bool const _cppinfo_tests_enabled = \
-      rsl::enable_tests<^^NS, [] {}>();                                         \
+#define RSLTEST_ENABLE_NS(NS)                                                 \
+  namespace {                                                                 \
+  RSLTEST_IMPL_USED [[maybe_unused]] static bool const _rsl_testing_enabled = \
+      rsl::testing::enable_tests<^^NS, [] {}>();                                       \
   }
 
 #ifndef RSL_TEST_NAMESPACE
 #  define RSL_TEST_NAMESPACE ::
-#else 
+#else
 // open the namespace to ensure it exists
 namespace RSL_TEST_NAMESPACE {}
 #endif

@@ -3,7 +3,7 @@
 #include <string_view>
 #include <meta>
 
-namespace rsl::_testing_impl {
+namespace rsl::testing::_testing_impl {
 template <typename T>
 consteval bool has_annotation(std::meta::info R) {
   return !annotations_of(R, dealias(^^T)).empty();

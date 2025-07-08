@@ -3,6 +3,10 @@
 #include <functional>
 #include <meta>
 #include <ranges>
+#include <iterator>
+#include <deque>
+#include <set>
+#include <algorithm>
 
 #include <rsl/testing/annotations.hpp>
 #include <rsl/testing/test.hpp>
@@ -11,7 +15,7 @@
 
 #include <libassert/assert.hpp>
 
-namespace rsl {
+namespace rsl::testing {
 struct assertion_failure : std::runtime_error {
   using std::runtime_error::runtime_error;
 };
@@ -23,8 +27,6 @@ struct TestResult {
   double duration_ms;
 };
 
-TestResult timed_run(void (*runner)());
-
 struct Reporter {
   virtual ~Reporter()                                             = default;
   virtual void on_start(size_t total)                             = 0;
@@ -33,6 +35,27 @@ struct Reporter {
   virtual void on_summary(std::vector<TestResult> const& results) = 0;
   [[nodiscard]] virtual bool colorize() const                     = 0;
 };
+
+namespace _testing_impl {
+consteval bool has_parent(std::meta::info R) {
+  // HACK remove this once `std::meta::has_parent` is supported in libc++
+  return R != ^^::;
+}
+
+consteval std::vector<std::string_view> get_fully_qualified_name(std::meta::info R) {
+  std::vector<std::string_view> name{identifier_of(R)};
+  auto current = R;
+  while (has_parent(current)) {
+    current = parent_of(current);
+    if (!has_identifier(current)) {
+      continue;
+    }
+    name.emplace_back(define_static_string(identifier_of(current)));
+  }
+  std::ranges::reverse(name);
+  return name;
+}
+}  // namespace _testing_impl
 
 class Test {
   struct TestRun {
@@ -141,6 +164,7 @@ class Test {
 
 public:
   std::string_view name;
+  std::span<char const* const> full_name;
   bool expect_failure;
 
   Test() = delete;
@@ -148,6 +172,12 @@ public:
       : name{define_static_string(identifier_of(test))}
       , expect_failure{_testing_impl::has_annotation<annotations::ExpectFailureTag>(test)} {
     run_fncs = define_static_array(expand_targs(test));
+
+    std::vector<char const*> meta_name;
+    for (auto part : _testing_impl::get_fully_qualified_name(test)) {
+      meta_name.push_back(std::define_static_string(part));
+    }
+    full_name = define_static_array(meta_name);
   }
   [[nodiscard]] std::vector<TestRun> get_tests() const;
 };
@@ -164,4 +194,52 @@ consteval TestDef make_test(std::meta::info R) {
   return extract<TestDef>(substitute(^^make_test_impl, {reflect_constant(R)}));
 }
 }  // namespace _testing_impl
-}  // namespace rsl
+
+class TestNamespace {
+public:
+  std::string_view name;
+  std::vector<Test> tests;
+  std::vector<TestNamespace> children;
+
+  class iterator {
+    struct single_iterator {
+      std::vector<Test>::const_iterator it;
+      std::vector<Test>::const_iterator end;
+
+      bool operator==(single_iterator const& other) const {
+        return it == other.it && end == other.end;
+      }
+    };
+
+    single_iterator current;
+    std::deque<single_iterator> elements;
+
+    void flatten(TestNamespace const& current);
+
+  public:
+    using iterator_category = std::input_iterator_tag;
+    using value_type        = Test;
+    using difference_type   = std::ptrdiff_t;
+    using pointer           = Test const*;
+    using reference         = Test const&;
+
+    iterator() = default;
+    explicit iterator(TestNamespace const& ns);
+
+    Test const& operator*() const { return *current.it; }
+    Test const* operator->() const { return &operator*(); }
+    iterator& operator++();
+    bool operator==(iterator const& other) const;
+  };
+
+  [[nodiscard]] iterator begin() const { return iterator{*this}; }
+  [[nodiscard]] static iterator end() { return {}; }
+
+private:
+  void insert(const Test& test, size_t i = 0);
+  friend TestNamespace get_tests();
+};
+
+TestNamespace get_tests();
+
+}  // namespace rsl::testing

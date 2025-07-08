@@ -4,7 +4,7 @@
 
 #include <rsl/testing/_impl/util.hpp>
 
-namespace rsl::_testing_impl {
+namespace rsl::testing::_testing_impl {
 template <std::size_t Idx>
 struct Fixture {
   friend decltype(auto) evaluate_fixture_impl(Fixture);

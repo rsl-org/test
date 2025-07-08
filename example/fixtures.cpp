@@ -1,14 +1,23 @@
 #include <rsl/test>
+#include <string_view>
+#include <algorithm>
+
+// https://docs.pytest.org/en/6.2.x/fixture.html
+
 namespace {
+[[=rsl::fixture]] 
+std::string_view my_fruit() {
+  return "apple";
+}
 
 [[=rsl::fixture]]
-int meta_fixture() { return 21; }
+std::vector<std::string_view> fruit_basket(std::string_view my_fruit) {
+  return {"banana", my_fruit};
+}
 
-[[=rsl::fixture]]
-int fixture(int meta_fixture) { return meta_fixture * 2; }
-
-[[=rsl::test]]
-void test_with_fixture(int fixture){
-    ASSERT(fixture > 5);
+[[=rsl::test]] 
+void test_my_fruit_in_basket(std::string_view my_fruit, 
+                             std::vector<std::string_view> fruit_basket) {
+  ASSERT(std::ranges::contains(fruit_basket, my_fruit));
 };
 }  // namespace
