@@ -45,6 +45,7 @@
 **/compile_commands.json
 **/scratchpad*.*
 **/CMakeUserPresets.json
+lib/
 
 # Caches
 .cache

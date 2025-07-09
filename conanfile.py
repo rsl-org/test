@@ -19,10 +19,11 @@ class rsltestRecipe(ConanFile):
     options = {
         "shared": [True, False], "fPIC": [True, False],
         "coverage": [True, False],
-        "examples": [True, False]
+        "examples": [True, False],
+        "editable": [True, False]
     }
 
-    default_options = {"shared": False, "fPIC": True, "coverage": False, "examples": False}
+    default_options = {"shared": False, "fPIC": True, "coverage": False, "examples": False, "editable": False}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt", "src/*", "include/*", "example/*", "test/*"
@@ -56,6 +57,9 @@ class rsltestRecipe(ConanFile):
                     "BUILD_TESTING": not self.conf.get("tools.build:skip_test", default=False)
                 })
         cmake.build()
+        if self.options.editable:
+            # package is in editable mode - make sure it's installed after building
+            cmake.install()
 
     def package(self):
         cmake = CMake(self)
