@@ -30,7 +30,13 @@ target_link_libraries(rsltest PUBLIC libassert::assert)
 # target_link_libraries(rsltest rsl::rsl)
 
 add_library(rsltest_main)
+
 target_link_libraries(rsltest_main PUBLIC rsltest)
+
+find_package(rsl-config REQUIRED)
+target_link_libraries(rsltest_main PRIVATE rsl::config)
+
+
 add_subdirectory(src)
 
 install(TARGETS rsltest_main)

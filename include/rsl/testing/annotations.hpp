@@ -68,7 +68,11 @@ consteval std::meta::info reflect_tuple(std::tuple<Ts...> const& tup,
         continue;
       }
     }
-    reflected_element[Idx] = std::meta::reflect_constant(get<Idx>(tup));
+    if constexpr (std::convertible_to<Ts...[Idx], std::string_view>) {
+      reflected_element[Idx] = std::meta::reflect_constant_string(get<Idx>(tup));
+    } else {
+      reflected_element[Idx] = std::meta::reflect_constant(get<Idx>(tup));
+    }
   }
   return std::meta::reflect_constant_array(reflected_element);
 }
