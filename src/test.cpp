@@ -86,7 +86,7 @@ bool TestNamespace::iterator::operator==(iterator const& other) const {
 }
 
 void TestNamespace::insert(Test const& test, std::size_t i) {
-  if (i == test.full_name.size()) {
+  if (i == test.full_name.size() - 1) {
     tests.push_back(test);
     return;
   }
@@ -165,9 +165,9 @@ static void print_tests(rsl::testing::TestNamespace const& current, std::size_t 
   }
 
   for (auto const& test : current.tests) {
-    std::println("{} - {}", current_indent, test.name);
+    std::println("{}- {}", current_indent, test.name);
     for (auto const& run : test.get_tests()) {
-      std::println("{} - {}", std::string((indent + 1) * 2, ' '), run.name);
+      std::println("{}- {}", std::string((indent + 1) * 2, ' '), run.name);
     }
   }
 }

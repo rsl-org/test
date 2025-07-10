@@ -19,15 +19,6 @@
 #include "output.hpp"
 
 namespace {
-// void print_usage(char const* prog) {
-//   std::println("Usage: {} [options]", prog);
-//   std::println("Options:");
-//   std::println("  -h, --help           Show this help message and exit");
-//   std::println("  --list     List tests without running them.");
-//   std::println("  --filter <pattern>   Only run tests whose name contains <pattern>");
-//   std::println("  --xml[=<file>]       Output JUnit XML; if <file> omitted, writes to stdout");
-// }
-
 template <std::ranges::range R>
 std::string join(R&& values, std::string_view delimiter) {
   auto fold = [&](std::string a, auto b) { return std::move(a) + delimiter + b; };
