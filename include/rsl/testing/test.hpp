@@ -27,15 +27,6 @@ struct TestResult {
   double duration_ms;
 };
 
-struct Reporter {
-  virtual ~Reporter()                                             = default;
-  virtual void on_start(size_t total)                             = 0;
-  virtual void on_test_start(std::string_view name)               = 0;
-  virtual void on_test_end(TestResult const& result)              = 0;
-  virtual void on_summary(std::vector<TestResult> const& results) = 0;
-  [[nodiscard]] virtual bool colorize() const                     = 0;
-};
-
 namespace _testing_impl {
 consteval bool has_parent(std::meta::info R) {
   // HACK remove this once `std::meta::has_parent` is supported in libc++
@@ -58,6 +49,7 @@ consteval std::vector<std::string_view> get_fully_qualified_name(std::meta::info
 }  // namespace _testing_impl
 
 class Test {
+public:
   struct TestRun {
     std::function<void()> fnc;
     Test const* test;
@@ -98,8 +90,6 @@ class Test {
         }
       }
 
-      static std::vector<std::string> dump() {}
-
       static std::string stringify_args(arg_tuple const& tuple) {
         return std::apply(
             [](auto&&... args) {
@@ -124,7 +114,7 @@ class Test {
       }
     };
   };
-
+private:
   template <_testing_impl::TestInstance F, std::meta::info R>
   std::vector<TestRun> runner() const {
     return TestRun::Setter<F, R>::make(this);
@@ -195,8 +185,10 @@ consteval TestDef make_test(std::meta::info R) {
 }
 }  // namespace _testing_impl
 
-class TestNamespace {
-public:
+struct Reporter;
+struct Output;
+
+struct TestNamespace {
   std::string_view name;
   std::vector<Test> tests;
   std::vector<TestNamespace> children;
@@ -234,12 +226,16 @@ public:
 
   [[nodiscard]] iterator begin() const { return iterator{*this}; }
   [[nodiscard]] static iterator end() { return {}; }
-
-private:
   void insert(const Test& test, size_t i = 0);
-  friend TestNamespace get_tests();
+  
+  [[nodiscard]] std::size_t count() const;
+  bool run(Reporter* reporter);
 };
 
-TestNamespace get_tests();
+struct TestRoot : TestNamespace {
+  bool run(Reporter* reporter);
+};
+
+TestRoot get_tests();
 
 }  // namespace rsl::testing

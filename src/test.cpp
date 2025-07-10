@@ -1,8 +1,10 @@
-#include "rsl/testing/test.hpp"
 #include <algorithm>
+#include <print>
 
 #include <libassert/assert.hpp>
-#include <rsl/testing/all.hpp>
+#include <rsl/testing/test.hpp>
+#include <rsl/testing/output.hpp>
+
 
 template <bool Colorize>
 void failure_handler(libassert::assertion_info const& info) {
@@ -20,34 +22,7 @@ void failure_handler(libassert::assertion_info const& info) {
 }
 
 namespace rsl::testing {
-
-bool run(std::vector<Test> const& tests, Reporter& reporter) {
-  reporter.on_start(tests.size());
-  std::vector<TestResult> results;
-
-  libassert::set_failure_handler(reporter.colorize() ? failure_handler<true>
-                                                     : failure_handler<false>);
-  for (auto const& test : tests) {
-    reporter.on_test_start(test.name);
-    for (auto const& test_run : test.get_tests()) {
-      auto result = test_run.run();
-      reporter.on_test_end(result);
-      results.push_back(result);
-    }
-  }
-  libassert::set_failure_handler(libassert::default_failure_handler);
-
-  reporter.on_summary(results);
-  return std::ranges::all_of(results, [](auto& r) { return r.passed; });
-}
-
-std::vector<Test::TestRun> Test::get_tests() const {
-  std::vector<TestRun> tests{};
-  for (auto fnc : run_fncs) {
-    tests.append_range((this->*fnc)());
-  }
-  return tests;
-}
+std::set<TestDef>& registry();
 
 TestResult Test::TestRun::run() const {
   auto ret = TestResult{.name = name};
@@ -128,12 +103,77 @@ void TestNamespace::insert(Test const& test, std::size_t i) {
   it->insert(test, i + 1);
 }
 
-TestNamespace get_tests() {
-  TestNamespace root;
+
+std::vector<Test::TestRun> Test::get_tests() const {
+  std::vector<TestRun> tests{};
+  for (auto fnc : run_fncs) {
+    tests.append_range((this->*fnc)());
+  }
+  return tests;
+}
+
+std::size_t TestNamespace::count() const {
+  std::size_t total = tests.size();
+  for (auto const& ns : children) {
+    total += ns.count();
+  }
+  return total;
+}
+
+bool TestNamespace::run(Reporter* reporter) {
+  reporter->enter_namespace(name);
+  bool status = true;
+  for (auto& ns : children) {
+    status &= ns.run(reporter);
+  }
+  
+  for (auto& test : tests) {
+    reporter->before_test(test);
+    for (auto const& test_run : test.get_tests()) {
+      auto result = test_run.run();
+      reporter->after_test(result);
+      // TODO don't discard test result
+    }
+  }
+  reporter->exit_namespace(name);
+  return status;
+}
+
+bool TestRoot::run(Reporter* reporter) {
+  libassert::set_failure_handler(failure_handler<true>);
+  reporter->before_run(*this);
+  bool status = TestNamespace::run(reporter);
+  libassert::set_failure_handler(libassert::default_failure_handler);
+  // TODO after_run
+  return status;
+}
+
+TestRoot get_tests() {
+  TestRoot root;
   for (auto test_def : rsl::testing::registry()) {
     auto test = test_def();
     root.insert(test);
   }
   return root;
 }
+
+static void print_tests(rsl::testing::TestNamespace const& current, std::size_t indent = 0) {
+  auto current_indent = std::string(indent * 2, ' ');
+  for (auto const& ns : current.children) {
+    std::println("{}{}", current_indent, ns.name);
+    print_tests(ns, indent + 1);
+  }
+
+  for (auto const& test : current.tests) {
+    std::println("{} - {}", current_indent, test.name);
+    for (auto const& run : test.get_tests()) {
+      std::println("{} - {}", std::string((indent + 1) * 2, ' '), run.name);
+    }
+  }
+}
+
+void Reporter::list_tests(TestNamespace const& tests) {
+  print_tests(tests);
+}
+
 }  // namespace rsl::testing

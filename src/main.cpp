@@ -1,4 +1,6 @@
+#include "rsl/testing/test.hpp"
 #define RSLTEST_SKIP
+#include <memory>
 #include <rsl/test>
 
 #include <fstream>
@@ -12,116 +14,106 @@
 #include "reporters/junit.hpp"
 #include "reporters/terminal.hpp"
 
+#include <rsl/config>
+
+#include "output.hpp"
+
 namespace {
-void print_usage(char const* prog) {
-  std::println("Usage: {} [options]", prog);
-  std::println("Options:");
-  std::println("  -h, --help           Show this help message and exit");
-  std::println("  --list     List tests without running them.");
-  std::println("  --filter <pattern>   Only run tests whose name contains <pattern>");
-  std::println("  --xml[=<file>]       Output JUnit XML; if <file> omitted, writes to stdout");
-}
+// void print_usage(char const* prog) {
+//   std::println("Usage: {} [options]", prog);
+//   std::println("Options:");
+//   std::println("  -h, --help           Show this help message and exit");
+//   std::println("  --list     List tests without running them.");
+//   std::println("  --filter <pattern>   Only run tests whose name contains <pattern>");
+//   std::println("  --xml[=<file>]       Output JUnit XML; if <file> omitted, writes to stdout");
+// }
 
 template <std::ranges::range R>
 std::string join(R&& values, std::string_view delimiter) {
-  auto fold = [&](std::string a, auto b) {
-    return std::move(a) + delimiter + b;
-  };
+  auto fold = [&](std::string a, auto b) { return std::move(a) + delimiter + b; };
 
-  return std::accumulate(std::next(values.begin()), values.end(), std::string(values[0]),
-                         fold);
+  return std::accumulate(std::next(values.begin()), values.end(), std::string(values[0]), fold);
 }
 }  // namespace
 
-int main(int argc, char** argv) {
-  bool list_only = false;
-  std::string filter;
-  bool use_xml = false;
-  std::optional<std::string> xml_file;
-  bool gtest_mode = false;
+class TestConfig : public rsl::cli {
+  rsl::testing::TestRoot tree;
+  std::vector<std::string> sections;
+  std::unique_ptr<rsl::testing::Output> _output;
+  
+public:
+  [[=positional]] std::string filter    = "";
+  [[=option]] std::string reporter = "colorized";
+  [[=option]] bool durations            = true;
+  [[=option, =flag]] bool list_tests = false;
 
-  for (int i = 1; i < argc; ++i) {
-    std::string_view arg = argv[i];
-    if (arg == "-h" || arg == "--help") {
-      print_usage(argv[0]);
-      return 0;
-    } else if (arg == "--list" ) {
-      list_only = true;
-    } else if (arg == "--filter" || arg.starts_with("--gtest_filter")) {
-      if (arg.starts_with("--gtest_filter")) { 
-        gtest_mode = true;
-        arg.remove_prefix(14);
-        if (!arg.empty() && arg[0] == '=') {
-          arg.remove_prefix(1);
-          filter = arg;
-          continue;
-        }
-      }
+  [[=option]] void section(std::string part) { sections.emplace_back(std::move(part)); }
 
-      if (i + 1 < argc) {
-        filter = argv[++i];
-      } else {
-        std::print("Error: --filter requires an argument\n");
-        return 1;
-      }
-    } else if (arg.rfind("--xml", 0) == 0 ) {
-      use_xml = true;
-      if (arg.size() > 5 && arg[5] == '=') {
-        xml_file = arg.substr(6);
-      }
-    } else if (arg.rfind("--rsl_output=xml", 0) == 0 ) {
-      use_xml = true;
-      if (arg.size() > 18 && arg[18] == ':') {
-        xml_file = arg.substr(19);
-      }
-    } else {
-      std::print("Unknown option: {}\n", arg);
-      print_usage(argv[0]);
-      return 1;
-    }
+  [[=option]] void output(std::string filename) {
+    _output = std::make_unique<rsl::testing::FileOutput>(filename);
   }
 
-  // auto root = rsl::get_tests();
-  
+  [[=option]] void verbosity(std::string level) {}
 
-  auto all_tests = rsl::testing::registry();
-  std::vector<rsl::testing::Test> tests{};
-  for (auto test_def : all_tests) {
-    auto test = test_def();
-    if (!filter.empty()) {
-      auto full_name = join(test.full_name, gtest_mode? "." : "::");
+  explicit TestConfig() 
+  : tree(rsl::testing::get_tests()) 
+  , _output(new rsl::testing::ConsoleOutput())
+  {}
+
+  void apply_filter(){
+    if (filter.empty()) {
+      // also check other catch-alls 
+      return;
+    }
+
+    rsl::testing::TestRoot new_tree;
+    // rebuild the test tree with filters applied
+    for (auto&& test : tree) {
+      auto full_name = join(test.full_name, "::");
 
       if (!std::regex_search(full_name, std::regex{filter})) {
         continue;
       }
+      new_tree.insert(test);
     }
-    tests.push_back(test);
+    tree = new_tree;
   }
 
-  if (list_only) {
-    for (auto const& test : tests) {
-      auto ns = std::span(test.full_name.begin(), test.full_name.end() - 1);
-      std::println("{}.", join(ns, "_"));
-      std::println("  {}", test.name);
+  static void print_tests(rsl::testing::TestNamespace const& current, std::size_t indent = 0) {
+    auto current_indent = std::string(indent*2, ' ');
+    for (auto const& ns : current.children) {
+      std::println("{}{}", current_indent, ns.name);
+      print_tests(ns, indent + 1);
     }
-    return 0;
+
+    for (auto const& test: current.tests) {
+      std::println("{} - {}", current_indent, test.name);
+      for (auto const& run : test.get_tests()) {
+        std::println("{} - {}", std::string((indent+1)*2, ' '), run.name);
+      }
+    }
   }
 
-  bool result = false;
-
-  if (use_xml) {
-    if (xml_file) {
-      auto file_stream = std::ofstream(*xml_file);
-      auto reporter    = rsl::testing::_testing_impl::JUnitXmlReporter(file_stream);
-      result           = rsl::testing::run(tests, reporter);
+  void run(){
+    std::unique_ptr<rsl::testing::Reporter> selected_reporter;
+    if (reporter == "xml") {
+      selected_reporter = std::make_unique<rsl::testing::_impl::JUnitXmlReporter>(_output.get());
     } else {
-      auto reporter = rsl::testing::_testing_impl::JUnitXmlReporter(std::cout);
-      result        = rsl::testing::run(tests, reporter);
+      selected_reporter = std::make_unique<rsl::testing::_impl::ConsoleReporter>();
     }
-  } else {
-    auto reporter = rsl::testing::_testing_impl::ConsoleReporter();
-    result        = rsl::testing::run(tests, reporter);
-  }
 
-  return result ? 0 : 1;
+    if (list_tests) {
+      // tree.print(selected_reporter.get()); // TODO
+      selected_reporter->list_tests(tree);
+    } else {
+      tree.run(selected_reporter.get());
+    }
+  }
+};
+
+int main(int argc, char** argv) {
+  auto config = TestConfig();
+  config.parse_args(argc, argv);
+  config.apply_filter();
+  config.run();
 }

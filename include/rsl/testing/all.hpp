@@ -9,10 +9,6 @@
 #include <rsl/testing/util.hpp>
 
 namespace rsl {
-namespace testing {
-bool run(std::vector<Test> const& tests, Reporter& reporter);
-}
-
 using testing::annotations::fixture;
 using testing::annotations::test;
 using testing::annotations::expect_failure;

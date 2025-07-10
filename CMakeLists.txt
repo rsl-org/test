@@ -34,7 +34,7 @@ add_library(rsltest_main)
 target_link_libraries(rsltest_main PUBLIC rsltest)
 
 find_package(rsl-config REQUIRED)
-target_link_libraries(rsltest_main PRIVATE rsl::config)
+target_link_libraries(rsltest_main PUBLIC rsl::config)
 
 
 add_subdirectory(src)
