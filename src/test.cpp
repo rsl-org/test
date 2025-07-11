@@ -5,7 +5,6 @@
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/output.hpp>
 
-
 template <bool Colorize>
 void failure_handler(libassert::assertion_info const& info) {
   // libassert::enable_virtual_terminal_processing_if_needed();  // for terminal colors on windows
@@ -22,8 +21,9 @@ void failure_handler(libassert::assertion_info const& info) {
 }
 
 namespace rsl::testing {
+namespace _testing_impl {
 std::set<TestDef>& registry();
-
+}
 TestResult Test::TestRun::run() const {
   auto ret = TestResult{.name = name};
   try {
@@ -103,7 +103,6 @@ void TestNamespace::insert(Test const& test, std::size_t i) {
   it->insert(test, i + 1);
 }
 
-
 std::vector<Test::TestRun> Test::get_tests() const {
   std::vector<TestRun> tests{};
   for (auto fnc : run_fncs) {
@@ -126,7 +125,7 @@ bool TestNamespace::run(Reporter* reporter) {
   for (auto& ns : children) {
     status &= ns.run(reporter);
   }
-  
+
   for (auto& test : tests) {
     reporter->before_test(test);
     for (auto const& test_run : test.get_tests()) {
@@ -150,7 +149,7 @@ bool TestRoot::run(Reporter* reporter) {
 
 TestRoot get_tests() {
   TestRoot root;
-  for (auto test_def : rsl::testing::registry()) {
+  for (auto test_def : rsl::testing::_testing_impl::registry()) {
     auto test = test_def();
     root.insert(test);
   }
