@@ -1,4 +1,4 @@
-target_sources(rsltest_example PRIVATE 
+target_sources(example_test PRIVATE 
     always_passes.cpp 
     always_fails.cpp 
     tparams.cpp

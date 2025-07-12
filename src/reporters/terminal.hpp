@@ -9,7 +9,7 @@ namespace rsl::testing::_impl {
 class ConsoleReporter : public Reporter {
 public:
   void before_run(TestNamespace const& tests) override { std::print("Running {} tests...\n", tests.count()); }
-  void before_test(Test const& test) override { std::print("[ RUN      ] {}\n", test.name); }
+  void before_test(Test::TestRun const& test) override { std::print("[ RUN      ] {}\n", test.name); }
   void after_test(TestResult const& result) override {
     bool const must_colorize = true;
     auto const color = std::array{must_colorize ? "\033[32m" : "", must_colorize ? "\033[31m" : ""};
@@ -30,7 +30,7 @@ public:
       std::print("{}ERROR{}: {}\n", color[1], reset, result.error);
     }
   }
-  void after_run(const std::vector<TestResult>& results) override {
+  void after_run(std::span<TestResult> results) override {
     auto passed = std::ranges::count_if(results, [](auto& r) { return r.passed; });
     std::print("=== Summary ===\n{} / {} tests passed.\n", passed, results.size());
   }

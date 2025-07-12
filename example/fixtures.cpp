@@ -4,7 +4,7 @@
 
 // https://docs.pytest.org/en/6.2.x/fixture.html
 
-namespace {
+namespace demo::fixtures {
 [[=rsl::fixture]] 
 std::string_view my_fruit() {
   return "apple";

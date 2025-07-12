@@ -120,21 +120,31 @@ std::size_t TestNamespace::count() const {
 }
 
 bool TestNamespace::run(Reporter* reporter) {
-  reporter->enter_namespace(name);
+  if (!name.empty()) {
+    reporter->enter_namespace(name);
+  }
   bool status = true;
   for (auto& ns : children) {
     status &= ns.run(reporter);
   }
 
   for (auto& test : tests) {
-    reporter->before_test(test);
+    auto runs = test.get_tests();
+    reporter->before_test_group(test);
+
+    std::vector<TestResult> results;
     for (auto const& test_run : test.get_tests()) {
+      reporter->before_test(test_run);
       auto result = test_run.run();
       reporter->after_test(result);
-      // TODO don't discard test result
+      results.push_back(result);
     }
+
+    reporter->after_test_group(results);
   }
-  reporter->exit_namespace(name);
+  if (!name.empty()) {
+    reporter->exit_namespace(name);
+  }
   return status;
 }
 

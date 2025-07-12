@@ -1,7 +1,7 @@
 #include <rsl/test>
 #include <tuple>
 
-namespace {
+namespace demo::params {
 
 std::vector<std::tuple<char, int>> make_params() {
     return {{'f', 13}, {'e', 14}};

@@ -156,11 +156,13 @@ public:
   std::string_view name;
   std::span<char const* const> full_name;
   bool expect_failure;
+  std::source_location sloc;
 
   Test() = delete;
   consteval explicit Test(std::meta::info test)
       : name{define_static_string(identifier_of(test))}
-      , expect_failure{_testing_impl::has_annotation<annotations::ExpectFailureTag>(test)} {
+      , expect_failure{_testing_impl::has_annotation<annotations::ExpectFailureTag>(test)}
+      , sloc(source_location_of(test)) {
     run_fncs = define_static_array(expand_targs(test));
 
     std::vector<char const*> meta_name;

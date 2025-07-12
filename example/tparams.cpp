@@ -1,7 +1,7 @@
 #include <rsl/test>
 #include <tuple>
 
-namespace {
+namespace demo::params {
 
 [[=rsl::test]]
 [[=rsl::tparams({std::tuple{^^int, 10}, {^^float, 21}})]]

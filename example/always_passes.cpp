@@ -1,11 +1,14 @@
-#define RSLTEST_SKIP
 #include <rsl/test>
 
-namespace testing {
+namespace demo {
 
-[[= rsl::test]] 
-void always_passes() {}
+[[=rsl::test]] 
+void always_passes() {
+  ASSERT(false, "testing");
+}
 
+[[=rsl::test, =rsl::expect_failure]]
+void always_fails() {
+    ASSERT(false, "oh no");
+}
 }  // namespace testing
-
-RSLTEST_ENABLE_NS(testing)

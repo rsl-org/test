@@ -3,7 +3,6 @@
 #include <memory>
 #include <rsl/test>
 
-#include <fstream>
 #include <regex>
 
 #include <numeric>
@@ -11,7 +10,7 @@
 #include <string_view>
 #include <string>
 
-#include "reporters/junit.hpp"
+#include "reporters/xml.hpp"
 #include "reporters/terminal.hpp"
 
 #include <rsl/config>
@@ -27,68 +26,84 @@ std::string join(R&& values, std::string_view delimiter) {
 }
 }  // namespace
 
-class TestConfig : public rsl::cli {
+// TODO check if the magic line "Catch2 v3.8.1" is really required
+class[[= rsl::cli::description("Catch2 v3.8.1")]] TestConfig : public rsl::cli {
   rsl::testing::TestRoot tree;
   std::vector<std::string> sections;
   std::unique_ptr<rsl::testing::Output> _output;
-  
+
 public:
-  [[=positional]] std::string filter    = "";
-  [[=option]] std::string reporter = "colorized";
-  [[=option]] bool durations            = true;
-  [[=option, =flag]] bool list_tests = false;
+  [[= positional]] std::string filter    = "";
+  [[= option]] std::string reporter      = "plain";
+  [[= option]] bool durations            = true;
+  [[= option, = flag ]] bool list_tests = false;
+  [[= option]] bool use_colour           = true;
 
-  [[=option]] void section(std::string part) { sections.emplace_back(std::move(part)); }
+  [[= option, =shorthand("c")]] void section(std::string part) { sections.emplace_back(std::move(part)); }
 
-  [[=option]] void output(std::string filename) {
+  [[= option]] void output(std::string filename) {
     _output = std::make_unique<rsl::testing::FileOutput>(filename);
   }
 
-  [[=option]] void verbosity(std::string level) {}
+  [[= option]] void verbosity(std::string level) {}
 
-  explicit TestConfig() 
-  : tree(rsl::testing::get_tests()) 
-  , _output(new rsl::testing::ConsoleOutput())
-  {}
+  explicit TestConfig()
+      : tree(rsl::testing::get_tests())
+      , _output(new rsl::testing::ConsoleOutput()) {}
 
-  void apply_filter(){
-    if (filter.empty()) {
-      // also check other catch-alls 
+  void apply_filter() {
+    if (filter.empty() || filter == "[.],*") {
       return;
+    }
+    std::string_view filter_view = filter;
+    std::vector<std::string> names;
+    std::size_t idx = 0;
+    while ((idx = filter_view.find(',')) != filter_view.npos) {
+      names.emplace_back(filter_view.substr(0, idx));
+      filter_view.remove_prefix(idx + 1);
+    }
+    if (!filter_view.empty()) {
+      names.emplace_back(filter_view);
     }
 
     rsl::testing::TestRoot new_tree;
     // rebuild the test tree with filters applied
     for (auto&& test : tree) {
       auto full_name = join(test.full_name, "::");
-
-      if (!std::regex_search(full_name, std::regex{filter})) {
-        continue;
+      
+      for (auto const& name : names) {
+        if (name == full_name || name == test.name || name == test.full_name[0]) {
+          new_tree.insert(test);
+        }
       }
-      new_tree.insert(test);
+      // if (!std::regex_search(full_name, std::regex{filter})) {
+      //   continue;
+      // }
     }
     tree = new_tree;
   }
 
   static void print_tests(rsl::testing::TestNamespace const& current, std::size_t indent = 0) {
-    auto current_indent = std::string(indent*2, ' ');
+    auto current_indent = std::string(indent * 2, ' ');
     for (auto const& ns : current.children) {
       std::println("{}{}", current_indent, ns.name);
       print_tests(ns, indent + 1);
     }
 
-    for (auto const& test: current.tests) {
+    for (auto const& test : current.tests) {
       std::println("{} - {}", current_indent, test.name);
       for (auto const& run : test.get_tests()) {
-        std::println("{} - {}", std::string((indent+1)*2, ' '), run.name);
+        std::println("{} - {}", std::string((indent + 1) * 2, ' '), run.name);
       }
     }
   }
 
-  void run(){
+  void run() {
     std::unique_ptr<rsl::testing::Reporter> selected_reporter;
-    if (reporter == "xml") {
-      selected_reporter = std::make_unique<rsl::testing::_impl::JUnitXmlReporter>(_output.get());
+    if (reporter == "junit") {
+      selected_reporter = std::make_unique<rsl::testing::_impl::JUnitXmlReporter>();
+    } else if (reporter == "xml") {
+      selected_reporter = std::make_unique<rsl::testing::_impl::Catch2XmlReporter>();
     } else {
       selected_reporter = std::make_unique<rsl::testing::_impl::ConsoleReporter>();
     }
@@ -99,6 +114,7 @@ public:
     } else {
       tree.run(selected_reporter.get());
     }
+    selected_reporter->finalize(*_output);
   }
 };
 
