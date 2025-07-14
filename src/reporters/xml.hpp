@@ -10,7 +10,6 @@
 
 #include <rsl/testing/output.hpp>
 
-
 namespace rsl::testing::_impl {
 class XmlNode {
   std::vector<XmlNode> children;
@@ -30,6 +29,22 @@ public:
   XmlNode& add(XmlNode const& section) {
     children.push_back(section);
     return children.back();
+  }
+
+  [[nodiscard]]
+  bool has_attribute(std::string_view name, std::string_view value) const {
+    return std::ranges::any_of(attributes, [&](auto const& attr) {
+      return attr.first == name && attr.second == value;
+    });
+  }
+
+  XmlNode* select(auto filter) {
+    for (auto& node : children) {
+      if (filter(node)) {
+        return &node;
+      }
+    }
+    return nullptr;
   }
 
   void add_raw(std::string const& content) { raw_content += content; }
@@ -118,6 +133,16 @@ public:
     return it;
   }
 
+  XmlNode* select(auto filter) { 
+    return current().select(std::move(filter));
+  }
+
+  void move_cursor(XmlNode* node) {
+    if (node != nullptr) {
+      stack.push(node);
+    }
+  }
+
   void pop() {
     if (stack.size() > 0) {
       stack.pop();
@@ -182,37 +207,43 @@ public:
 
   void exit_namespace(std::string_view name) override {}
 
-  _impl::XmlNode* current = nullptr;
   void before_test_group(Test const& test) override {
-    XmlNode& node           = document.current().add("TestCase");
-    node.attributes["name"] = test.full_name[0];
-    current                 = &node;
-    for (auto const& part : test.full_name | std::views::drop(1)) {
-      XmlNode& node           = current->add("Section");
-      node.attributes["name"] = part;
-      current                 = &node;
+    XmlNode* tc = document.select([&](XmlNode& node) {
+      return node.name == "TestCase" && node.has_attribute("name", test.full_name[0]);
+    });
+
+    if (tc == nullptr) {
+      XmlNode& node           = document.current().add("TestCase");
+      node.attributes["name"] = test.full_name[0];
+      tc                      = &node;
     }
+
+    for (auto const& part : test.full_name | std::views::drop(1)) {
+      XmlNode& node           = tc->add("Section");
+      node.attributes["name"] = part;
+      tc                      = &node;
+    }
+    document.move_cursor(tc);
   }
 
+  void after_test_group(std::span<TestResult> results) override {
+    document.pop();
+  }
 
-  _impl::XmlNode* test = nullptr; // TODO REFACTOR!
   void before_test(Test::TestRun const& run) override {
-    XmlNode& node           = current->add("Section");
+    XmlNode& node               = document.add("Section");
     node.attributes["filename"] = run.test->sloc.file_name();
-    node.attributes["line"] = std::to_string(run.test->sloc.line());
-    node.attributes["name"] = run.name;
-    test = &node;
+    node.attributes["line"]     = std::to_string(run.test->sloc.line());
+    node.attributes["name"]     = run.name;
   }
 
   void after_test(TestResult const& result) override {
-    auto& node = *test;
+    auto& node                              = document.current();
     auto& results                           = node.add("OverallResults");
     results.attributes["successes"]         = result.passed ? "1" : "0";
     results.attributes["failures"]          = result.passed ? "0" : "1";
     results.attributes["durationInSeconds"] = std::format("{:.3f}", result.duration_ms / 1000.);
-    // document.pop();
-    // current = nullptr;
-    test = nullptr;
+    document.pop();
   }
 
   void after_run(std::span<TestResult> results) override { document.pop(); }
@@ -225,16 +256,17 @@ public:
       name_node.add_raw(std::string(name));
     };
 
-    // for (auto const& ns : tests.children) {
-    //   push_section(ns.name);
-    // }
-
-    // for (auto const& test : tests.tests) {
-    //   push_section(test.name);
-    // }
-    for (auto const& test : tests) {
-      push_section(join(test.full_name, "::"));
+    for (auto const& ns : tests.children) {
+      push_section(ns.name);
     }
+
+    for (auto const& test : tests.tests) {
+      push_section(test.name);
+    }
+
+    // for (auto const& test : tests) {
+    //   push_section(join(test.full_name, "::"));
+    // }
   }
 
   void finalize(Output& target) override { target.print(document.stringify()); }
