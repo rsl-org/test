@@ -4,7 +4,7 @@ namespace demo {
 
 [[=rsl::test]] 
 void always_passes() {
-  //ASSERT(false, "testing");
+  // ASSERT(false, "testing");
 }
 
 [[=rsl::test, =rsl::expect_failure]]

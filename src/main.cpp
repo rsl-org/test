@@ -24,10 +24,10 @@ std::string join(R&& values, std::string_view delimiter) {
 
   return std::accumulate(std::next(values.begin()), values.end(), std::string(values[0]), fold);
 }
+
 }  // namespace
 
-// TODO check if the magic line "Catch2 v3.8.1" is really required
-class[[= rsl::cli::description("Catch2 v3.8.1")]] TestConfig : public rsl::cli {
+class[[= rsl::cli::description("rsl::test (in Catch2 v3.8.1 compatibility mode)")]] TestConfig : public rsl::cli {
   rsl::testing::TestRoot tree;
   std::vector<std::string> sections;
   std::unique_ptr<rsl::testing::Output> _output;
@@ -36,10 +36,12 @@ public:
   [[= positional]] std::string filter    = "";
   [[= option]] std::string reporter      = "plain";
   [[= option]] bool durations            = true;
-  [[= option, = flag ]] bool list_tests = false;
+  [[ = option, = flag ]] bool list_tests = false;
   [[= option]] bool use_colour           = true;
 
-  [[= option, =shorthand("c")]] void section(std::string part) { sections.emplace_back(std::move(part)); }
+  [[ = option, = shorthand("c") ]] void section(std::string part) {
+    sections.emplace_back(std::move(part));
+  }
 
   [[= option]] void output(std::string filename) {
     _output = std::make_unique<rsl::testing::FileOutput>(filename);
@@ -70,7 +72,7 @@ public:
     // rebuild the test tree with filters applied
     for (auto&& test : tree) {
       auto full_name = join(test.full_name, "::");
-      
+
       for (auto const& name : names) {
         if (name == full_name || name == test.name || name == test.full_name[0]) {
           new_tree.insert(test);

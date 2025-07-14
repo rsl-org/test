@@ -154,6 +154,7 @@ bool TestRoot::run(Reporter* reporter) {
   bool status = TestNamespace::run(reporter);
   libassert::set_failure_handler(libassert::default_failure_handler);
   // TODO after_run
+  reporter->after_run({});
   return status;
 }
 

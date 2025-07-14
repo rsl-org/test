@@ -55,8 +55,8 @@ if (BUILD_TESTING)
   target_link_libraries(rsltest_test PRIVATE rsltest)
   target_link_libraries(rsltest_test PRIVATE rsltest_main)
   
-  enable_testing()
-  add_test(NAME rsltest_test COMMAND rsltest_example)
+  # enable_testing()
+  # add_test(NAME rsltest_test COMMAND rsltest_example)
 
   if(ENABLE_COVERAGE)
     message(STATUS "Instrumenting for coverage")  

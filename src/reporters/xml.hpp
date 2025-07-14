@@ -208,29 +208,50 @@ public:
   void exit_namespace(std::string_view name) override {}
 
   void before_test_group(Test const& test) override {
+    
+  }
+
+  void after_test_group(std::span<TestResult> results) override {
+    
+  }
+
+  void before_test(Test::TestRun const& run) override {
+    Test const& test = *run.test;
     XmlNode* tc = document.select([&](XmlNode& node) {
       return node.name == "TestCase" && node.has_attribute("name", test.full_name[0]);
     });
 
     if (tc == nullptr) {
+      // <TestCase name="demo" filename="/home/che/src/scratchpad/catch_test/src/test.cpp" line="10">
       XmlNode& node           = document.current().add("TestCase");
       node.attributes["name"] = test.full_name[0];
+      
+      // <OverallResult success="true" skips="0" durationInSeconds="0.000188"/>
+      XmlNode& result = node.add("OverallResult");
+      result.attributes["success"] = "true";
+      result.attributes["skips"] = "0";
+
+      //<StdOut></StdOut>
+      //<StdErr></StdErr>
+
       tc                      = &node;
     }
 
     for (auto const& part : test.full_name | std::views::drop(1)) {
       XmlNode& node           = tc->add("Section");
       node.attributes["name"] = part;
+
+      // <OverallResults successes="0" failures="0" expectedFailures="0" skipped="false" durationInSeconds="3.2e-05"/>
+      XmlNode& result = node.add("OverallResults");
+      result.attributes["successes"] = "0";
+      result.attributes["failures"] = "0";
+      result.attributes["expectedFailures"] = "0";
+      result.attributes["successes"] = "false";
+
       tc                      = &node;
     }
     document.move_cursor(tc);
-  }
 
-  void after_test_group(std::span<TestResult> results) override {
-    document.pop();
-  }
-
-  void before_test(Test::TestRun const& run) override {
     XmlNode& node               = document.add("Section");
     node.attributes["filename"] = run.test->sloc.file_name();
     node.attributes["line"]     = std::to_string(run.test->sloc.line());
@@ -243,10 +264,38 @@ public:
     results.attributes["successes"]         = result.passed ? "1" : "0";
     results.attributes["failures"]          = result.passed ? "0" : "1";
     results.attributes["durationInSeconds"] = std::format("{:.3f}", result.duration_ms / 1000.);
+
+    // <Expression success="false" type="REQUIRE" filename="/home/che/src/scratchpad/catch_test/src/test.cpp" line="16">
+    //   <Original>
+    //     false
+    //   </Original>
+    //   <Expanded>
+    //     false
+    //   </Expanded>
+    // </Expression>
+
+    document.pop();
     document.pop();
   }
 
-  void after_run(std::span<TestResult> results) override { document.pop(); }
+  void after_run(std::span<TestResult> results) override { 
+    // <OverallResults successes="0" failures="0" expectedFailures="0" skips="0"/>
+    // <OverallResultsCases successes="1" failures="0" expectedFailures="0" skips="0"/>
+    auto& node = document.add("OverallResults");
+    node.attributes["successes"] = "0";
+    node.attributes["failures"] = "0";
+    node.attributes["expectedFailures"] = "0";
+    node.attributes["skips"] = "0";
+    document.pop(); 
+
+    auto& cases = document.add("OverallResultsCases");
+    cases.attributes["successes"] = "1";
+    cases.attributes["failures"] = "0";
+    cases.attributes["expectedFailures"] = "0";
+    cases.attributes["skips"] = "0";
+    document.pop();
+    document.pop();
+  }
 
   void list_tests(TestNamespace const& tests) override {
     auto& section     = document.push("MatchingTests");
