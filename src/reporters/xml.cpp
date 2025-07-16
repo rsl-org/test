@@ -16,7 +16,7 @@ struct testsuite {
   std::vector<testcase> tests;
 };
 
-class [[=annotations::rename("junit")]] JUnitXmlReporter : public Reporter {
+class [[=annotations::rename("junit")]] JUnitXmlReporter : public Reporter::Registrar<JUnitXmlReporter> {
   testsuite suite;
 public:
   void before_run(TestNamespace const&) override {}
@@ -35,6 +35,4 @@ public:
 
   void finalize(Output& target) override { target.print(rsl::to_xml(suite)); }
 };
-
-REGISTER_REPORTER(JUnitXmlReporter);
 }  // namespace rsl::testing::_impl

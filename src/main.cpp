@@ -101,9 +101,9 @@ public:
   void run() {
     std::unique_ptr<rsl::testing::Reporter> selected_reporter;
     if (reporter.empty()) {
-      selected_reporter = rsl::testing::reporter_registry().at("plain")();
+      selected_reporter = rsl::testing::Reporter::make("plain");
     } else {
-      selected_reporter = rsl::testing::reporter_registry().at(reporter)();
+      selected_reporter = rsl::testing::Reporter::make(reporter);
     }
 
     if (list_tests) {

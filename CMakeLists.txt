@@ -9,16 +9,10 @@ add_library(rsltest SHARED)
 
 set_target_properties(rsltest PROPERTIES OUTPUT_NAME rsltest)
 target_compile_options(rsltest PUBLIC 
-  "-stdlib=libc++"
-  "-freflection"
-  "-fannotation-attributes"
-  "-fparameter-reflection"
-  "-fexpansion-statements"
-  # "-Wno-c++26-extensions"
+  "-freflection-latest"
   # "-ftime-trace"
   # "-fconstexpr-steps=10000000" # required to scan the global namespace
 )
-target_link_options(rsltest PUBLIC "-stdlib=libc++" "-lc++abi")
 target_include_directories(rsltest PUBLIC 
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)

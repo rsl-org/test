@@ -18,7 +18,9 @@ struct Output {
   }
 };
 
-struct Reporter {
+struct Reporter : _impl::Factory<Reporter> {
+  explicit Reporter(Key) {}
+
   virtual ~Reporter() = default;
   virtual void before_run(TestNamespace const& tests) {}
   virtual void after_run(std::span<TestResult> results) {}
@@ -36,31 +38,4 @@ struct Reporter {
 
   virtual void finalize(Output& output) {}
 };
-
-namespace _reporter_impl {
-consteval std::string_view get_name(std::meta::info R) {
-  auto annotations = annotations_of(R, ^^annotations::Rename);
-  if (annotations.size() == 1) {
-    auto opt = extract<annotations::Rename>(constant_of(annotations[0]));
-    return opt.value;
-  }
-  return identifier_of(R);
-}
-}  // namespace _reporter_impl
-
-using ReporterDef = std::unique_ptr<Reporter> (*)();
-std::unordered_map<std::string_view, ReporterDef>& reporter_registry();
-
-template <typename T>
-bool register_reporter() {
-  reporter_registry()[_reporter_impl::get_name(^^T)] =
-      +[] -> std::unique_ptr<Reporter> { return std::make_unique<T>(); };
-  return true;
-}
 }  // namespace rsl::testing
-
-#define REGISTER_REPORTER(classname)                        \
-  namespace {                                               \
-  [[maybe_unused]] static bool const _reporter_registered = \
-      rsl::testing::register_reporter<classname>();         \
-  }

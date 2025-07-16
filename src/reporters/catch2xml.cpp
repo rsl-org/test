@@ -111,7 +111,7 @@ struct MatchingTests {
   [[=xml::node]] std::vector<MatchingTests::TestCase> tests;
 };
 
-class[[= annotations::rename("xml")]] Catch2XmlReporter : public Reporter {
+class[[= annotations::rename("xml")]] Catch2XmlReporter : public Reporter::Registrar<Catch2XmlReporter> {
   Catch2TestRun report;
   
 public:
@@ -178,6 +178,4 @@ public:
     }
   }
 };
-
-REGISTER_REPORTER(Catch2XmlReporter);
 }  // namespace rsl::testing::_xml_impl
