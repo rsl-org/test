@@ -21,7 +21,8 @@ struct assertion_failure : std::runtime_error {
 };
 
 struct TestResult {
-  std::string_view name;
+  class Test const* test;
+  std::string name;
   bool passed;
   std::string error;
   double duration_ms;

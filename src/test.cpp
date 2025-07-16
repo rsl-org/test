@@ -25,7 +25,7 @@ namespace _testing_impl {
 std::set<TestDef>& registry();
 }
 TestResult Test::TestRun::run() const {
-  auto ret = TestResult{.name = name};
+  auto ret = TestResult{.test = test, .name = name};
   try {
     auto t0 = std::chrono::steady_clock::now();
     fnc();

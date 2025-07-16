@@ -33,18 +33,8 @@ struct Section {
   [[= xml::attribute]] std::string name;
   [[= xml::attribute]] std::optional<std::string> filename;
   [[= xml::attribute]] std::optional<unsigned> line;
-  std::vector<Section> sections;
-  OverallResults results;
-
-  Section& get_section(std::string_view name) {
-    for (auto& section : sections) {
-      if (section.name == name) {
-        return section;
-      }
-    }
-    sections.emplace_back(std::string(name));
-    return sections.back();
-  }
+  [[=xml::node]] std::vector<Section> sections;
+  [[=xml::node]] OverallResults results;
 
   void update_results() {
     for (auto& section : sections) {
@@ -62,18 +52,8 @@ struct TestCase {
   [[= xml::attribute]] std::optional<std::string> filename;
   [[= xml::attribute]] std::optional<unsigned> line;
 
-  std::vector<Section> sections;
-  OverallResult result;
-
-  Section& get_section(std::string_view name) {
-    for (auto& section : sections) {
-      if (section.name == name) {
-        return section;
-      }
-    }
-    sections.emplace_back(std::string(name));
-    return sections.back();
-  }
+  [[=xml::node]] std::vector<Section> sections;
+  [[=xml::node]] OverallResult result;
 
   void update_results() {
     for (auto& section : sections) {
@@ -88,9 +68,9 @@ struct Catch2TestRun {
   [[= xml::attribute]] std::size_t xml_format_version = 3;
   [[= xml::attribute]] std::string catch2_version     = "3.8.1";
 
-  std::vector<TestCase> tests;
-  OverallResults test_results;
-  OverallResultsCases case_results;
+  [[=xml::node]] std::vector<TestCase> tests;
+  [[=xml::node]] OverallResults test_results;
+  [[=xml::node]] OverallResultsCases case_results;
 
   TestCase& get_tc(std::string_view name) {
     for (auto& test : tests) {
@@ -128,41 +108,36 @@ struct MatchingTests {
   struct TestCase {
     [[= xml::raw]] std::string Name;
   };
-  std::vector<MatchingTests::TestCase> tests;
+  [[=xml::node]] std::vector<MatchingTests::TestCase> tests;
 };
 
 class[[= annotations::rename("xml")]] Catch2XmlReporter : public Reporter {
   Catch2TestRun report;
-  Section* section;
-
+  
 public:
   void before_run(TestNamespace const&) override {}
   void enter_namespace(std::string_view name) override {}
   void exit_namespace(std::string_view name) override {}
   void before_test_group(Test const& test) override {}
   void after_test_group(std::span<TestResult> results) override {}
+  void before_test(Test::TestRun const& run) override {}
+  
+  void after_test(TestResult const& result) override {
+    TestCase& tc = report.get_tc(result.test->full_name[0]);
+    Section* section = nullptr;
 
-  void before_test(Test::TestRun const& run) override {
-    TestCase& tc = report.get_tc(run.test->full_name[0]);
-    if (run.test->full_name.size() >= 2) {
-      section         = &tc.sections.emplace_back(run.test->full_name[1]);
-      int single_test = run.test->get_tests().size() == 1;
-      for (auto idx = 2; idx < run.test->full_name.size() - single_test; ++idx) {
-        section = &section->sections.emplace_back(run.test->full_name[idx]);
+    if (result.test->full_name.size() >= 2) {
+      section         = &tc.sections.emplace_back(result.test->full_name[1]);
+      for (auto const& part : result.test->full_name | std::views::drop(2)) {
+        section = &section->sections.emplace_back(part);
       }
-      section->sections.push_back({.name     = run.name,
-                                   .filename = run.test->sloc.file_name(),
-                                   .line     = run.test->sloc.line()});
+      section->sections.emplace_back(result.name, result.test->sloc.file_name(), result.test->sloc.line());
       section = &section->sections.back();
     } else {
-      tc.sections.push_back({.name     = run.name,
-                             .filename = run.test->sloc.file_name(),
-                             .line     = run.test->sloc.line()});
+      tc.sections.emplace_back(result.name, result.test->sloc.file_name(), result.test->sloc.line());
       section = &tc.sections.back();
     }
-  }
 
-  void after_test(TestResult const& result) override {
     if (result.passed) {
       ++section->results.successes;
     } else {
