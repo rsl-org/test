@@ -26,15 +26,15 @@ target_include_directories(rsltest PUBLIC
 find_package(libassert REQUIRED)
 target_link_libraries(rsltest PUBLIC libassert::assert)
 
-# find_package(rsl REQUIRED)
-# target_link_libraries(rsltest rsl::rsl)
-
-add_library(rsltest_main)
+add_library(rsltest_main SHARED)
 
 target_link_libraries(rsltest_main PUBLIC rsltest)
 
 find_package(rsl-config REQUIRED)
-target_link_libraries(rsltest_main PUBLIC rsl::config)
+find_package(rsl-serialize REQUIRED)
+
+target_link_libraries(rsltest PUBLIC rsl::config)
+target_link_libraries(rsltest PUBLIC rsl::serialize)
 
 
 add_subdirectory(src)

@@ -1,4 +1,3 @@
-#pragma once
 #include <rsl/testing/output.hpp>
 #include <array>
 #include <print>
@@ -6,7 +5,7 @@
 #include <libassert/assert.hpp>
 
 namespace rsl::testing::_impl {
-class ConsoleReporter : public Reporter {
+class [[=annotations::rename("plain")]] ConsoleReporter : public Reporter {
 public:
   void before_run(TestNamespace const& tests) override { std::print("Running {} tests...\n", tests.count()); }
   void before_test(Test::TestRun const& test) override { std::print("[ RUN      ] {}\n", test.name); }
@@ -39,4 +38,6 @@ public:
   //   return libassert::isatty(libassert::stderr_fileno);
   // }
 };
+
+REGISTER_REPORTER(ConsoleReporter);
 }  // namespace rsl::_impl

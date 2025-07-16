@@ -1,3 +1,4 @@
+#include "rsl/testing/output.hpp"
 #include "rsl/testing/test.hpp"
 #define RSLTEST_SKIP
 #include <memory>
@@ -10,13 +11,10 @@
 #include <string_view>
 #include <string>
 
-#include "reporters/xml.hpp"
-#include "reporters/terminal.hpp"
-
 #include <rsl/config>
+#include <rsl/testing/_impl/factory.hpp>
 
 #include "output.hpp"
-
 namespace {
 template <std::ranges::range R>
 std::string join(R&& values, std::string_view delimiter) {
@@ -102,12 +100,10 @@ public:
 
   void run() {
     std::unique_ptr<rsl::testing::Reporter> selected_reporter;
-    if (reporter == "junit") {
-      selected_reporter = std::make_unique<rsl::testing::_impl::JUnitXmlReporter>();
-    } else if (reporter == "xml") {
-      selected_reporter = std::make_unique<rsl::testing::_impl::Catch2XmlReporter>();
+    if (reporter.empty()) {
+      selected_reporter = rsl::testing::reporter_registry().at("plain")();
     } else {
-      selected_reporter = std::make_unique<rsl::testing::_impl::ConsoleReporter>();
+      selected_reporter = rsl::testing::reporter_registry().at(reporter)();
     }
 
     if (list_tests) {

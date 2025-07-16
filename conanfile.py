@@ -39,6 +39,7 @@ class rsltestRecipe(ConanFile):
     def requirements(self):
         self.requires("libassert/2.1.5", transitive_headers=True, transitive_libs=True)
         self.requires("rsl-config/0.1", transitive_headers=False, transitive_libs=True)
+        self.requires("rsl-serialize/0.1", transitive_headers=False, transitive_libs=True)
     
     def layout(self):
         cmake_layout(self)
@@ -75,7 +76,7 @@ class rsltestRecipe(ConanFile):
         self.cpp_info.components["test_main"].set_property("cmake_target_name", "rsl::test_main")
         self.cpp_info.components["test_main"].includedirs = ["include"]
         self.cpp_info.components["test_main"].libdirs = ["lib"]
-        self.cpp_info.components["test_main"].requires = ["test", "rsl-config::config"] # depend on primary component
+        self.cpp_info.components["test_main"].requires = ["test", "rsl-config::config", "rsl-serialize::serialize"] # depend on primary component
         self.cpp_info.components["test_main"].libs = ["rsltest_main"]
 
 
