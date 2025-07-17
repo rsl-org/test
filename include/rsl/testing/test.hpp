@@ -66,11 +66,11 @@ public:
 
       static std::vector<arg_tuple> expand_parameters() {
         std::vector<arg_tuple> arg_sets;
-        if constexpr (_testing_impl::has_annotation<annotations::Params>(R)) {
+        if constexpr (_testing_impl::has_annotation<Params>(R)) {
           // expand params
           template for (constexpr auto annotation :
-                        std::define_static_array(annotations_of(R, ^^annotations::Params))) {
-            constexpr static annotations::Params params = extract<annotations::Params>(annotation);
+                        std::define_static_array(annotations_of(R, ^^Params))) {
+            constexpr static Params params = extract<Params>(annotation);
             arg_sets.append_range([:params.generator:]());
           }
         } else {
@@ -82,6 +82,7 @@ public:
 
       static void run_one(arg_tuple const& tuple) {
         if constexpr (is_class_member(R)) {
+          // TODO allow fixture ctors to use other fixtures as parameters
           auto fixture = [:parent_of(R):]();
           std::apply(fixture.[:F.fnc:], tuple);
         } else if constexpr (is_variable(R)) {
@@ -128,12 +129,12 @@ private:
       auto instance = _testing_impl::TestInstance{define_static_string(display_string_of(R)), R};
       return {extract<runner_type>(
           substitute(^^runner, {std::meta::reflect_constant(instance), reflect_constant(R)}))};
-    } else if (is_variable(R) && _testing_impl::has_annotation<annotations::TParams>(R)) {
+    } else if (is_variable(R) && _testing_impl::has_annotation<TParams>(R)) {
       std::vector<_testing_impl::TestInstance> instantiations;
       using generator_type = std::vector<_testing_impl::TestInstance> (*)(std::meta::info);
 
-      for (auto annotation : annotations_of(R, ^^annotations::TParams)) {
-        auto params    = extract<annotations::TParams>(annotation);
+      for (auto annotation : annotations_of(R, ^^TParams)) {
+        auto params    = extract<TParams>(annotation);
         auto generator = extract<generator_type>(params.generator);
         instantiations.append_range(generator(R));
       }
@@ -189,7 +190,6 @@ consteval TestDef make_test(std::meta::info R) {
 }  // namespace _testing_impl
 
 struct Reporter;
-struct Output;
 
 struct TestNamespace {
   std::string_view name;
