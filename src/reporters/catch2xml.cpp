@@ -115,7 +115,7 @@ class[[= rename("xml")]] Catch2XmlReporter : public Reporter::Registrar<Catch2Xm
   Catch2TestRun report;
   
 public:
-  void before_test(TestRun const& run) override {}
+  void before_test(rsl::testing::TestCase const& run) override {}
   void after_test(TestResult const& result) override {
     TestCase& tc = report.get_tc(result.test->full_name[0]);
     Section* section = nullptr;

@@ -8,7 +8,7 @@ namespace rsl::testing::_impl {
 class [[=rename("plain")]] ConsoleReporter : public Reporter::Registrar<ConsoleReporter> {
 public:
   void before_run(TestNamespace const& tests) override { std::print("Running {} tests...\n", tests.count()); }
-  void before_test(TestRun const& test) override { std::print("[ RUN      ] {}\n", test.name); }
+  void before_test(TestCase const& test) override { std::print("[ RUN      ] {}\n", test.name); }
   void after_test(TestResult const& result) override {
     bool const must_colorize = true;
     auto const color = std::array{must_colorize ? "\033[32m" : "", must_colorize ? "\033[31m" : ""};

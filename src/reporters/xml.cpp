@@ -19,7 +19,7 @@ struct testsuite {
 class [[=rename("junit")]] JUnitXmlReporter : public Reporter::Registrar<JUnitXmlReporter> {
   testsuite suite;
 public:
-  void before_test(TestRun const& test) override {}
+  void before_test(TestCase const& test) override {}
   void after_test(TestResult const& result) override {
     auto node = testcase{.name=std::string(result.name), .time=result.duration_ms / 1000.};
     if (!result.passed) {

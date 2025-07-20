@@ -24,7 +24,7 @@ namespace rsl::testing {
 namespace _testing_impl {
 std::set<TestDef>& registry();
 }
-TestResult TestRun::run() const {
+TestResult TestCase::run() const {
   auto ret = TestResult{.test = test, .name = name};
   try {
     auto t0 = std::chrono::steady_clock::now();

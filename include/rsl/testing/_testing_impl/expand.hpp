@@ -8,22 +8,10 @@
 #include <rsl/assert>
 #include <libassert/assert.hpp>
 
-#include <rsl/testing/fuzz.hpp>
+#include <rsl/testing/test_case.hpp>
 
 #include "fixture.hpp"
 #include "annotations.hpp"
-
-namespace rsl::testing {
-// TODO move to testing/test.hpp
-struct TestResult;
-struct TestRun {
-  class Test const* test;
-  std::function<void()> fnc;
-  std::string name;
-
-  [[nodiscard]] TestResult run() const;
-};
-}  // namespace rsl::testing
 
 namespace rsl::testing::_testing_impl {
 template <std::meta::info R, std::meta::info Target>
@@ -94,14 +82,14 @@ struct TestRunner {
   }
 
   template <typename... Ts>
-  static TestRun bind(Test const* group, std::tuple<Ts...> args) {
+  static TestCase bind(Test const* group, std::tuple<Ts...> args) {
     return {group, std::bind_front(run_one<std::tuple<Ts...>>, args), get_name(args)};
   }
 };
 
 template <std::meta::info R, _testing_impl::Annotations A>
 struct Expand {
-  std::vector<TestRun> runs;
+  std::vector<TestCase> runs;
   Test const* group;
 
   template <typename Runner, annotations::Params Generator>

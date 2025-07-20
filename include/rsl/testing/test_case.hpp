@@ -1,13 +1,22 @@
 #pragma once
+#include <functional>
 
 namespace rsl::testing {
+struct TestResult;
 class Test;
+
+struct TestCase {
+  Test const* test;
+  std::function<void()> fnc;
+  std::string name;
+
+  [[nodiscard]] TestResult run() const;
+};
+
 struct FuzzTarget {
   // stringifying name is pointless here, perhaps do it after failure
-  
+  Test const* test;
   int (*run)(uint8_t const*, size_t);
   size_t (*mutate)(uint8_t*, size_t, size_t, unsigned int);
-
-  Test const* test;
 };
 }  // namespace rsl::testing

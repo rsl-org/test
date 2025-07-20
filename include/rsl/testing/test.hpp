@@ -8,6 +8,8 @@
 #include <set>
 #include <algorithm>
 
+#include "test_case.hpp"
+
 #include "_testing_impl/util.hpp"
 #include "_testing_impl/expand.hpp"
 #include "_testing_impl/fixture.hpp"
@@ -30,11 +32,11 @@ struct TestResult {
 
 
 class Test {
-  using runner_type = std::vector<TestRun> (Test::*)() const;
+  using runner_type = std::vector<TestCase> (Test::*)() const;
   runner_type get_tests_impl;
 
   template <std::meta::info R, _testing_impl::Annotations Ann>
-  std::vector<TestRun> expand_test() const {
+  std::vector<TestCase> expand_test() const {
     return _testing_impl::Expand<R, Ann>{this}.runs;
   }
 public:
@@ -70,7 +72,7 @@ public:
     full_name = define_static_array(meta_name);
   }
 
-  std::vector<TestRun> get_tests() const { return (this->*get_tests_impl)(); }
+  std::vector<TestCase> get_tests() const { return (this->*get_tests_impl)(); }
 };
 
 using TestDef = Test (*)();
