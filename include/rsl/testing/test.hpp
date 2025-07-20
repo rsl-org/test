@@ -22,15 +22,6 @@ struct assertion_failure : std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct TestResult {
-  class Test const* test;
-  std::string name;
-  bool passed;
-  std::string error;
-  double duration_ms;
-};
-
-
 class Test {
   using runner_type = std::vector<TestCase> (Test::*)() const;
   runner_type get_tests_impl;

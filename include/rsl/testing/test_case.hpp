@@ -2,11 +2,17 @@
 #include <functional>
 
 namespace rsl::testing {
-struct TestResult;
-class Test;
+
+struct TestResult {
+  class Test const* test;
+  std::string name;
+  bool passed;
+  std::string error;
+  double duration_ms;
+};
 
 struct TestCase {
-  Test const* test;
+  class Test const* test;
   std::function<void()> fnc;
   std::string name;
 
@@ -15,7 +21,7 @@ struct TestCase {
 
 struct FuzzTarget {
   // stringifying name is pointless here, perhaps do it after failure
-  Test const* test;
+  class Test const* test;
   int (*run)(uint8_t const*, size_t);
   size_t (*mutate)(uint8_t*, size_t, size_t, unsigned int);
 };
