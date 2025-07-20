@@ -28,7 +28,7 @@ struct Reporter : _impl::Factory<Reporter> {
   virtual void before_test_group(Test const& test) {}
   virtual void after_test_group(std::span<TestResult> results) {}
 
-  virtual void before_test(Test::TestRun const& test) = 0;
+  virtual void before_test(TestRun const& test) = 0;
   virtual void after_test(TestResult const& result)   = 0;
 
   virtual void list_tests(TestNamespace const& tests);

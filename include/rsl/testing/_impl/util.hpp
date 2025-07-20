@@ -35,4 +35,22 @@ constexpr std::uint32_t fnv1a(std::string_view str) {
   return fnv1a(str.begin(), str.size());
 }
 
+consteval bool has_parent(std::meta::info R) {
+  // HACK remove this once `std::meta::has_parent` is supported in libc++
+  return R != ^^::;
+}
+
+consteval std::vector<std::string_view> get_fully_qualified_name(std::meta::info R) {
+  std::vector<std::string_view> name{identifier_of(R)};
+  auto current = R;
+  while (has_parent(current)) {
+    current = parent_of(current);
+    if (!has_identifier(current)) {
+      continue;
+    }
+    name.emplace_back(define_static_string(identifier_of(current)));
+  }
+  std::ranges::reverse(name);
+  return name;
+}
 }  // namespace rsl::_testing_impl

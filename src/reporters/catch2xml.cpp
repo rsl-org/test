@@ -111,17 +111,11 @@ struct MatchingTests {
   [[=xml::node]] std::vector<MatchingTests::TestCase> tests;
 };
 
-class[[= annotations::rename("xml")]] Catch2XmlReporter : public Reporter::Registrar<Catch2XmlReporter> {
+class[[= rename("xml")]] Catch2XmlReporter : public Reporter::Registrar<Catch2XmlReporter> {
   Catch2TestRun report;
   
 public:
-  void before_run(TestNamespace const&) override {}
-  void enter_namespace(std::string_view name) override {}
-  void exit_namespace(std::string_view name) override {}
-  void before_test_group(Test const& test) override {}
-  void after_test_group(std::span<TestResult> results) override {}
-  void before_test(Test::TestRun const& run) override {}
-  
+  void before_test(TestRun const& run) override {}
   void after_test(TestResult const& result) override {
     TestCase& tc = report.get_tc(result.test->full_name[0]);
     Section* section = nullptr;

@@ -9,11 +9,11 @@
 #include <rsl/testing/util.hpp>
 
 namespace rsl {
-using testing::annotations::fixture;
-using testing::annotations::test;
-using testing::annotations::expect_failure;
-using testing::annotations::params;
-using testing::annotations::tparams;
+using testing::fixture;
+using testing::test;
+using testing::expect_failure;
+using testing::params;
+using testing::tparams;
 
 }  // namespace rsl::testing
 
@@ -40,3 +40,21 @@ namespace RSL_TEST_NAMESPACE {}
 #endif
 
 #define RSLTEST_ENABLE RSLTEST_ENABLE_NS(RSL_TEST_NAMESPACE)
+
+namespace rsl::testing {
+template <typename T, T V>
+  requires (!std::is_reference_v<T>)
+struct Anchor {
+  constexpr static auto value = 
+    std::is_object_v<T> ? std::meta::reflect_constant(V) : std::meta::reflect_function(*V);
+};
+
+template <std::meta::info V> 
+struct Anchor <std::meta::info, V>{ constexpr static auto value = V; };
+}
+
+#define RSLTEST_ANCHOR_IMPL(TYPE, VALUE) \
+consteval std::meta::info _rsl_test_anchor(rsl::testing::Anchor<TYPE, VALUE> anchor={}) { return anchor.value; }
+
+#define RSLTEST_ANCHOR(...) RSLTEST_ANCHOR_IMPL(std::meta::info, (^^__VA_ARGS__))
+#define RSLTEST_ANCHOR_OVERLOAD(TYPE, VALUE) RSLTEST_ANCHOR_IMPL(TYPE, VALUE)

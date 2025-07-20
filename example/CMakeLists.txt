@@ -4,3 +4,6 @@ target_sources(example_test PRIVATE
     params.cpp
     fixtures.cpp
 )
+
+add_executable(params_debug params_debug.cpp)
+target_link_libraries(params_debug PUBLIC rsltest)

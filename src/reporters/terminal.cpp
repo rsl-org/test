@@ -5,10 +5,10 @@
 #include <libassert/assert.hpp>
 
 namespace rsl::testing::_impl {
-class [[=annotations::rename("plain")]] ConsoleReporter : public Reporter::Registrar<ConsoleReporter> {
+class [[=rename("plain")]] ConsoleReporter : public Reporter::Registrar<ConsoleReporter> {
 public:
   void before_run(TestNamespace const& tests) override { std::print("Running {} tests...\n", tests.count()); }
-  void before_test(Test::TestRun const& test) override { std::print("[ RUN      ] {}\n", test.name); }
+  void before_test(TestRun const& test) override { std::print("[ RUN      ] {}\n", test.name); }
   void after_test(TestResult const& result) override {
     bool const must_colorize = true;
     auto const color = std::array{must_colorize ? "\033[32m" : "", must_colorize ? "\033[31m" : ""};

@@ -8,10 +8,9 @@
 #include <set>
 #include <algorithm>
 
-#include <rsl/testing/annotations.hpp>
-#include <rsl/testing/test.hpp>
-#include <rsl/testing/_impl/fixture.hpp>
-#include <rsl/testing/_impl/util.hpp>
+#include "_impl/fixture.hpp"
+#include "_impl/util.hpp"
+#include "runner.hpp"
 
 #include <libassert/assert.hpp>
 
@@ -28,144 +27,40 @@ struct TestResult {
   double duration_ms;
 };
 
-namespace _testing_impl {
-consteval bool has_parent(std::meta::info R) {
-  // HACK remove this once `std::meta::has_parent` is supported in libc++
-  return R != ^^::;
-}
-
-consteval std::vector<std::string_view> get_fully_qualified_name(std::meta::info R) {
-  std::vector<std::string_view> name{identifier_of(R)};
-  auto current = R;
-  while (has_parent(current)) {
-    current = parent_of(current);
-    if (!has_identifier(current)) {
-      continue;
-    }
-    name.emplace_back(define_static_string(identifier_of(current)));
-  }
-  std::ranges::reverse(name);
-  return name;
-}
-}  // namespace _testing_impl
-
 class Test {
-public:
-  struct TestRun {
-    std::function<void()> fnc;
-    Test const* test;
-    std::string name;
-
-    [[nodiscard]] TestResult run() const;
-
-    template <_testing_impl::TestInstance F, std::meta::info R>
-    struct Setter {
-      using arg_tuple = [:substitute(
-                              ^^std::tuple,
-                              parameters_of(F.fnc) | std::views::transform(std::meta::type_of)):];
-
-      static std::vector<arg_tuple> expand_parameters() {
-        std::vector<arg_tuple> arg_sets;
-        if constexpr (_testing_impl::has_annotation<Params>(R)) {
-          // expand params
-          template for (constexpr auto annotation :
-                        std::define_static_array(annotations_of(R, ^^Params))) {
-            constexpr static Params params = extract<Params>(annotation);
-            arg_sets.append_range([:params.generator:]());
-          }
-        } else {
-          // expand fixtures
-          arg_sets.push_back(_testing_impl::evaluate_fixtures<F.fnc>());
-        }
-        return arg_sets;
-      }
-
-      static void run_one(arg_tuple const& tuple) {
-        if constexpr (is_class_member(R)) {
-          // TODO allow fixture ctors to use other fixtures as parameters
-          auto fixture = [:parent_of(R):]();
-          std::apply(fixture.[:F.fnc:], tuple);
-        } else if constexpr (is_variable(R)) {
-          std::apply([:R:].[:F.fnc:], tuple);
-        } else {
-          std::apply([:F.fnc:], tuple);
-        }
-      }
-
-      static std::string stringify_args(arg_tuple const& tuple) {
-        return std::apply(
-            [](auto&&... args) {
-              std::string result = "(";
-              std::size_t i      = 0;
-              ((result += (i++ ? ", " : "") + libassert::stringify(args)), ...);
-              result += ")";
-              return result;
-            },
-            tuple);
-      }
-
-      static std::vector<TestRun> make(Test const* test) {
-        std::vector<TestRun> runs;
-        for (auto&& args : expand_parameters()) {
-          auto name = F.name + stringify_args(args);
-          runs.emplace_back(std::bind_front(run_one, std::forward<decltype(args)>(args)),
-                            test,
-                            name);
-        }
-        return runs;
-      }
-    };
-  };
-private:
-  template <_testing_impl::TestInstance F, std::meta::info R>
-  std::vector<TestRun> runner() const {
-    return TestRun::Setter<F, R>::make(this);
-  }
-
   using runner_type = std::vector<TestRun> (Test::*)() const;
-
-  consteval static std::vector<runner_type> expand_targs(std::meta::info R) {
-    if (is_function(R)) {
-      auto instance = _testing_impl::TestInstance{define_static_string(display_string_of(R)), R};
-      return {extract<runner_type>(
-          substitute(^^runner, {std::meta::reflect_constant(instance), reflect_constant(R)}))};
-    } else if (is_variable(R) && _testing_impl::has_annotation<TParams>(R)) {
-      std::vector<_testing_impl::TestInstance> instantiations;
-      using generator_type = std::vector<_testing_impl::TestInstance> (*)(std::meta::info);
-
-      for (auto annotation : annotations_of(R, ^^TParams)) {
-        auto params    = extract<TParams>(annotation);
-        auto generator = extract<generator_type>(params.generator);
-        instantiations.append_range(generator(R));
-      }
-
-      std::vector<runner_type> runners{};
-      runners.reserve(instantiations.size());
-      for (auto instance : instantiations) {
-        runners.push_back(extract<runner_type>(
-            substitute(^^runner, {std::meta::reflect_constant(instance), reflect_constant(R)})));
-      }
-      return runners;
-    } else {
-      // TODO fail
-      std::unreachable();
-    }
+  template <std::meta::info R, Annotations Ann>
+  std::vector<TestRun> expand_test() const {
+    return _impl::Expand<R, Ann>{this}.runs;
   }
 
-  std::span<runner_type const> run_fncs;
+  runner_type get_tests_impl;
 
 public:
-  std::string_view name;
-  std::span<char const* const> full_name;
-  bool expect_failure;
   std::source_location sloc;
+  std::string_view name;                   // raw name
+  std::string_view preferred_name;         // from annotations
+  std::span<char const* const> full_name;  // fully qualified name
+
+  bool expect_failure;    // invert test checking
+  bool (*skip)();         // function to support conditional skipping
+  bool is_property_test;  // expand missing args as fixtures if false,
+                          // otherwise parameterize with domain
+  bool is_fuzz_test;
 
   Test() = delete;
-  consteval explicit Test(std::meta::info test)
-      : name{define_static_string(identifier_of(test))}
-      , expect_failure{_testing_impl::has_annotation<annotations::ExpectFailureTag>(test)}
-      , sloc(source_location_of(test)) {
-    run_fncs = define_static_array(expand_targs(test));
+  consteval explicit Test(std::meta::info test, std::meta::info annotation_anchor)
+      : sloc(source_location_of(test))
+      , name(define_static_string(identifier_of(test))) {
+    auto ann         = Annotations(annotation_anchor);
+    preferred_name   = ann.name;
+    expect_failure   = ann.expect_failure;
+    skip             = ann.skip;
+    is_property_test = ann.is_property_test;
+    is_fuzz_test     = ann.is_fuzz_test;
+
+    get_tests_impl = extract<runner_type>(
+        substitute(^^expand_test, {reflect_constant(test), std::meta::reflect_constant(ann)}));
 
     std::vector<char const*> meta_name;
     for (auto part : _testing_impl::get_fully_qualified_name(test)) {
@@ -173,7 +68,8 @@ public:
     }
     full_name = define_static_array(meta_name);
   }
-  [[nodiscard]] std::vector<TestRun> get_tests() const;
+
+  std::vector<TestRun> get_tests() const { return (this->*get_tests_impl)(); }
 };
 
 using TestDef = Test (*)();
@@ -181,7 +77,12 @@ using TestDef = Test (*)();
 namespace _testing_impl {
 template <std::meta::info R>
 Test make_test_impl() {
-  return Test(R);
+  if constexpr (has_identifier(R) && identifier_of(R) == "_rsl_test_surrogate") {
+    constexpr auto target = [:R:]();
+    return Test(target, R);
+  } else {
+    return Test(R, R);
+  }
 }
 
 consteval TestDef make_test(std::meta::info R) {
@@ -230,7 +131,7 @@ struct TestNamespace {
   [[nodiscard]] iterator begin() const { return iterator{*this}; }
   [[nodiscard]] static iterator end() { return {}; }
   void insert(const Test& test, size_t i = 0);
-  
+
   [[nodiscard]] std::size_t count() const;
   bool run(Reporter* reporter);
 };

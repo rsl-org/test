@@ -24,7 +24,7 @@ namespace rsl::testing {
 namespace _testing_impl {
 std::set<TestDef>& registry();
 }
-TestResult Test::TestRun::run() const {
+TestResult TestRun::run() const {
   auto ret = TestResult{.test = test, .name = name};
   try {
     auto t0 = std::chrono::steady_clock::now();
@@ -101,14 +101,6 @@ void TestNamespace::insert(Test const& test, std::size_t i) {
   }
 
   it->insert(test, i + 1);
-}
-
-std::vector<Test::TestRun> Test::get_tests() const {
-  std::vector<TestRun> tests{};
-  for (auto fnc : run_fncs) {
-    tests.append_range((this->*fnc)());
-  }
-  return tests;
 }
 
 std::size_t TestNamespace::count() const {
