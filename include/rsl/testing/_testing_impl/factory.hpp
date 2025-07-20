@@ -5,9 +5,9 @@
 #include <meta>
 #include <unordered_map>
 
-#include "../annotations.hpp"
+#include "annotations.hpp"
 
-namespace rsl::testing::_impl {
+namespace rsl::testing::_testing_impl {
 template <class Base, class... Args>
 class Factory {
 public:

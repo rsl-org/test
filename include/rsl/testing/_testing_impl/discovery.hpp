@@ -10,13 +10,28 @@
 #  define RSLTEST_SCAN_GLOBAL_NAMESPACE 0
 #endif
 
-#include <rsl/testing/annotations.hpp>
 #include <rsl/testing/test.hpp>
-#include <rsl/testing/_impl/fixture.hpp>
-#include <rsl/testing/_impl/util.hpp>
 
-namespace rsl::testing {
-namespace _testing_impl {
+#include "fixture.hpp"
+#include "annotations.hpp"
+#include "util.hpp"
+
+namespace rsl::testing::_testing_impl {
+
+template <std::meta::info R>
+Test make_test_impl() {
+  if constexpr (has_identifier(R) && identifier_of(R) == "_rsl_test_surrogate") {
+    constexpr auto target = [:R:]();
+    return Test(target, R);
+  } else {
+    return Test(R, R);
+  }
+}
+
+consteval TestDef make_test(std::meta::info R) {
+  return extract<TestDef>(substitute(^^make_test_impl, {reflect_constant(R)}));
+}
+
 consteval std::vector<TestDef> expand_class(std::meta::info class_r) {
   std::vector<TestDef> tests{};
 
@@ -99,8 +114,6 @@ struct TestDiscovery {
   }
 };
 std::set<TestDef>& registry();
-}  // namespace _testing_impl
-
 
 template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_tests() {
@@ -111,4 +124,4 @@ bool enable_tests() {
   return true;
 }
 
-}  // namespace rsl::testing
+}  // namespace rsl::testing::_testing_impl

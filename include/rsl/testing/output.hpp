@@ -5,7 +5,7 @@
 #include <format>
 
 #include "test.hpp"
-#include "_impl/factory.hpp"
+#include "_testing_impl/factory.hpp"
 
 namespace rsl::testing {
 struct Output {
@@ -18,7 +18,7 @@ struct Output {
   }
 };
 
-struct Reporter : _impl::Factory<Reporter> {
+struct Reporter : _testing_impl::Factory<Reporter> {
   explicit Reporter(Key) {}
 
   virtual ~Reporter() = default;

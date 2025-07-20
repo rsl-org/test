@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <meta>
 
-#include <rsl/testing/_impl/util.hpp>
+#include "util.hpp"
 
 namespace rsl::testing::_testing_impl {
 template <std::size_t Idx>

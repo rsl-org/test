@@ -4,6 +4,11 @@
 #include <meta>
 
 namespace rsl::testing::_testing_impl {
+template <bool V>
+bool constant_predicate() {
+  return V;
+}
+
 template <typename T>
 consteval bool has_annotation(std::meta::info R) {
   return !annotations_of(R, dealias(^^T)).empty();
@@ -53,4 +58,4 @@ consteval std::vector<std::string_view> get_fully_qualified_name(std::meta::info
   std::ranges::reverse(name);
   return name;
 }
-}  // namespace rsl::_testing_impl
+}  // namespace rsl::testing::_testing_impl

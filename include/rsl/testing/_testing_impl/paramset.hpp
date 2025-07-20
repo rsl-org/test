@@ -4,7 +4,7 @@
 #include <utility>
 #include <rsl/span>
 
-namespace rsl::testing {
+namespace rsl::testing::_testing_impl {
 struct ParamSet {
   rsl::span<std::meta::info const> value;
 

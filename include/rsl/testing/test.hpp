@@ -8,9 +8,10 @@
 #include <set>
 #include <algorithm>
 
-#include "_impl/fixture.hpp"
-#include "_impl/util.hpp"
-#include "runner.hpp"
+#include "_testing_impl/util.hpp"
+#include "_testing_impl/expand.hpp"
+#include "_testing_impl/fixture.hpp"
+#include "_testing_impl/annotations.hpp"
 
 #include <libassert/assert.hpp>
 
@@ -27,15 +28,15 @@ struct TestResult {
   double duration_ms;
 };
 
+
 class Test {
   using runner_type = std::vector<TestRun> (Test::*)() const;
-  template <std::meta::info R, Annotations Ann>
-  std::vector<TestRun> expand_test() const {
-    return _impl::Expand<R, Ann>{this}.runs;
-  }
-
   runner_type get_tests_impl;
 
+  template <std::meta::info R, _testing_impl::Annotations Ann>
+  std::vector<TestRun> expand_test() const {
+    return _testing_impl::Expand<R, Ann>{this}.runs;
+  }
 public:
   std::source_location sloc;
   std::string_view name;                   // raw name
@@ -52,7 +53,7 @@ public:
   consteval explicit Test(std::meta::info test, std::meta::info annotation_anchor)
       : sloc(source_location_of(test))
       , name(define_static_string(identifier_of(test))) {
-    auto ann         = Annotations(annotation_anchor);
+    auto ann         = _testing_impl::Annotations(annotation_anchor);
     preferred_name   = ann.name;
     expect_failure   = ann.expect_failure;
     skip             = ann.skip;
@@ -74,24 +75,7 @@ public:
 
 using TestDef = Test (*)();
 
-namespace _testing_impl {
-template <std::meta::info R>
-Test make_test_impl() {
-  if constexpr (has_identifier(R) && identifier_of(R) == "_rsl_test_surrogate") {
-    constexpr auto target = [:R:]();
-    return Test(target, R);
-  } else {
-    return Test(R, R);
-  }
-}
-
-consteval TestDef make_test(std::meta::info R) {
-  return extract<TestDef>(substitute(^^make_test_impl, {reflect_constant(R)}));
-}
-}  // namespace _testing_impl
-
 struct Reporter;
-
 struct TestNamespace {
   std::string_view name;
   std::vector<Test> tests;

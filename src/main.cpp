@@ -12,7 +12,7 @@
 #include <string>
 
 #include <rsl/config>
-#include <rsl/testing/_impl/factory.hpp>
+#include <rsl/testing/_testing_impl/factory.hpp>
 
 #include "output.hpp"
 namespace {
