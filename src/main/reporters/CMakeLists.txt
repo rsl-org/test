@@ -1,4 +1,4 @@
-target_sources(rsltest PUBLIC
+target_sources(rsltest_main PUBLIC
   terminal.cpp
   catch2xml.cpp
   xml.cpp
