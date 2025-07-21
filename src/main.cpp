@@ -13,8 +13,8 @@
 
 #include <rsl/config>
 #include <rsl/testing/_testing_impl/factory.hpp>
-
 #include "output.hpp"
+
 namespace {
 template <std::ranges::range R>
 std::string join(R&& values, std::string_view delimiter) {

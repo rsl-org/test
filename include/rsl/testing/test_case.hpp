@@ -6,8 +6,12 @@ namespace rsl::testing {
 struct TestResult {
   class Test const* test;
   std::string name;
+
   bool passed;
   std::string error;
+
+  std::string stdout;
+  std::string stderr;
   double duration_ms;
 };
 

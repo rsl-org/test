@@ -5,7 +5,6 @@
 
 #include <rsl/testing/output.hpp>
 #include <rsl/xml>
-#include "rsl/testing/annotations.hpp"
 
 namespace rsl::testing::_xml_impl {
 struct OverallResult {

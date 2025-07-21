@@ -1,10 +1,13 @@
 #include <rsl/test>
+#include <iostream>
 
 namespace demo {
 
 [[=rsl::test]] 
 void always_passes() {
-  // ASSERT(false, "testing");
+  std::cout << "foo\n";
+  std::cerr << "bar\n";
+  ASSERT(false, "testing");
 }
 
 [[=rsl::test, =rsl::expect_failure]]

@@ -4,11 +4,14 @@
 #include <libassert/assert.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/output.hpp>
+#include <rsl/testing/_testing_impl/discovery.hpp>
 
-template <bool Colorize>
+#include "capture.hpp"
+
 void failure_handler(libassert::assertion_info const& info) {
   // libassert::enable_virtual_terminal_processing_if_needed();  // for terminal colors on windows
-  auto width          = libassert::terminal_width(libassert::stderr_fileno);
+  constexpr bool Colorize = true;
+  auto width              = libassert::terminal_width(libassert::stderr_fileno);
   const auto& scheme  = Colorize ? libassert::get_color_scheme() : libassert::color_scheme::blank;
   std::string message = std::string(info.action()) + " at " + info.location() + ":";
   if (info.message) {
@@ -21,12 +24,57 @@ void failure_handler(libassert::assertion_info const& info) {
 }
 
 namespace rsl::testing {
-namespace _testing_impl {
-std::set<TestDef>& registry();
+std::set<TestDef>& _testing_impl::registry() {
+  static std::set<TestDef> data;
+  return data;
 }
+
+bool TestRoot::run(Reporter* reporter) {
+  libassert::set_failure_handler(failure_handler);
+  std::println("failure handler set");
+  reporter->before_run(*this);
+  bool status = TestNamespace::run(reporter);
+  libassert::set_failure_handler(libassert::default_failure_handler);
+  // TODO after_run
+  reporter->after_run({});
+  return status;
+}
+
+bool TestNamespace::run(Reporter* reporter) {
+  if (!name.empty()) {
+    reporter->enter_namespace(name);
+  }
+  bool status = true;
+  for (auto& ns : children) {
+    status &= ns.run(reporter);
+  }
+
+  for (auto& test : tests) {
+    auto runs = test.get_tests();
+    reporter->before_test_group(test);
+
+    std::vector<TestResult> results;
+    for (auto const& test_run : test.get_tests()) {
+      reporter->before_test(test_run);
+      auto result = test_run.run();
+      reporter->after_test(result);
+      results.push_back(result);
+    }
+
+    reporter->after_test_group(results);
+  }
+  if (!name.empty()) {
+    reporter->exit_namespace(name);
+  }
+  return status;
+}
+
 TestResult TestCase::run() const {
   auto ret = TestResult{.test = test, .name = name};
   try {
+    Capture _out(stdout, ret.stdout);
+    Capture _err(stderr, ret.stderr);
+
     auto t0 = std::chrono::steady_clock::now();
     fnc();
     auto t1 = std::chrono::steady_clock::now();
@@ -35,11 +83,16 @@ TestResult TestCase::run() const {
     ret.duration_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
     return ret;
   } catch (assertion_failure const& failure) {
-    ret.error = failure.what();
-  } catch (std::exception const& exc) {
-    ret.error = exc.what();
-  }  //
-  catch (...) {}
+    ret.error += failure.what();
+  } catch (std::exception const& exc) {  //
+    ret.error += exc.what();
+  } catch (std::string const& msg) {  //
+    ret.error += msg;
+  } catch (std::string_view msg) {  //
+    ret.error += msg;
+  } catch (char const* msg) {  //
+    ret.error += msg;
+  } catch (...) { ret.error += "unknown exception thrown"; }
 
   ret.passed = test->expect_failure;
   return ret;
@@ -109,45 +162,6 @@ std::size_t TestNamespace::count() const {
     total += ns.count();
   }
   return total;
-}
-
-bool TestNamespace::run(Reporter* reporter) {
-  if (!name.empty()) {
-    reporter->enter_namespace(name);
-  }
-  bool status = true;
-  for (auto& ns : children) {
-    status &= ns.run(reporter);
-  }
-
-  for (auto& test : tests) {
-    auto runs = test.get_tests();
-    reporter->before_test_group(test);
-
-    std::vector<TestResult> results;
-    for (auto const& test_run : test.get_tests()) {
-      reporter->before_test(test_run);
-      auto result = test_run.run();
-      reporter->after_test(result);
-      results.push_back(result);
-    }
-
-    reporter->after_test_group(results);
-  }
-  if (!name.empty()) {
-    reporter->exit_namespace(name);
-  }
-  return status;
-}
-
-bool TestRoot::run(Reporter* reporter) {
-  libassert::set_failure_handler(failure_handler<true>);
-  reporter->before_run(*this);
-  bool status = TestNamespace::run(reporter);
-  libassert::set_failure_handler(libassert::default_failure_handler);
-  // TODO after_run
-  reporter->after_run({});
-  return status;
 }
 
 TestRoot get_tests() {
