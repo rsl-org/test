@@ -5,9 +5,24 @@
 #include <rsl/testing/assert.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/output.hpp>
+#include <rsl/testing/util.hpp>
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
 #include "capture.hpp"
+
+#include <cpptrace/basic.hpp>
+#include <cpptrace/utils.hpp>
+
+void cleanup_frames(cpptrace::stacktrace& trace, std::string_view test_name) {
+  std::vector<cpptrace::stacktrace_frame> frames;
+  for (auto const& frame : trace.frames | std::views::drop(1)) {
+    frames.push_back(frame);
+    if (cpptrace::prune_symbol(frame.symbol) == test_name) {
+      break;
+    }
+  }
+  trace.frames = frames;
+}
 
 void failure_handler(libassert::assertion_info const& info) {
   // libassert::enable_virtual_terminal_processing_if_needed();  // for terminal colors on windows
@@ -20,7 +35,11 @@ void failure_handler(libassert::assertion_info const& info) {
   }
   message += "\n";
   message += info.statement(scheme) + info.print_binary_diagnostics(width, scheme) +
-             info.print_extra_diagnostics(width, scheme);
+             info.print_extra_diagnostics(width, scheme);// + info.print_stacktrace(width, scheme);
+
+  auto trace = info.get_stacktrace();
+  cleanup_frames(trace,  rsl::testing::_testing_impl::assertion_counter().test_name);
+  message += trace.to_string(true);
   throw rsl::testing::assertion_failure(message);
 }
 
@@ -31,11 +50,8 @@ std::set<TestDef>& registry() {
   return data;
 }
 
-std::vector<AssertionInfo>* assertion_counter(std::vector<AssertionInfo>* new_counter) {
-  static std::vector<AssertionInfo>* counter = nullptr;
-  if (new_counter != nullptr) {
-    counter = new_counter;
-  }
+AssertionTracker& assertion_counter() {
+  static AssertionTracker counter{};
   return counter;
 }
 }  // namespace _testing_impl
@@ -66,15 +82,15 @@ bool TestNamespace::run(Reporter* reporter) {
 
     std::vector<TestResult> results;
     for (auto const& test_run : test.get_tests()) {
-      std::vector<_testing_impl::AssertionInfo> assertions;
-      _testing_impl::assertion_counter(&assertions);
+      auto& tracker = _testing_impl::assertion_counter();
+      tracker.assertions = {};
+      tracker.test_name = join_str(test.full_name, "::");
 
       reporter->before_test(test_run);
       auto result = test_run.run();
       reporter->after_test(result);
 
-      _testing_impl::assertion_counter(nullptr);
-      std::println("assertion count: {}", assertions.size());
+      std::println("assertion count: {}", tracker.assertions.size());
       results.push_back(result);
     }
 

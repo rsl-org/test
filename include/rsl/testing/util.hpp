@@ -2,6 +2,7 @@
 #include <vector>
 #include <tuple>
 #include <ranges>
+#include <numeric>
 
 namespace rsl {
 template <typename... Ts>
@@ -34,5 +35,12 @@ constexpr std::vector<std::tuple<Ts...>> cartesian_product(std::vector<Ts> const
 template <typename... Ts>
 constexpr std::vector<std::tuple<Ts...>> cartesian_product(std::initializer_list<Ts> const&... vs) {
   return cartesian_product(std::vector(vs)...);
+}
+
+template <std::ranges::range R>
+std::string join_str(R&& values, std::string_view delimiter) {
+  auto fold = [&](std::string a, auto b) { return std::move(a) + delimiter + b; };
+
+  return std::accumulate(std::next(values.begin()), values.end(), std::string(values[0]), fold);
 }
 }  // namespace rsl

@@ -3,27 +3,13 @@
 #define RSLTEST_SKIP
 #include <memory>
 #include <rsl/test>
-
-#include <regex>
-
-#include <numeric>
-#include <ranges>
 #include <string_view>
 #include <string>
 
 #include <rsl/config>
+#include <rsl/testing/util.hpp>
 #include <rsl/testing/_testing_impl/factory.hpp>
 #include "output.hpp"
-
-namespace {
-template <std::ranges::range R>
-std::string join(R&& values, std::string_view delimiter) {
-  auto fold = [&](std::string a, auto b) { return std::move(a) + delimiter + b; };
-
-  return std::accumulate(std::next(values.begin()), values.end(), std::string(values[0]), fold);
-}
-
-}  // namespace
 
 class[[= rsl::cli::description("rsl::test (in Catch2 v3.8.1 compatibility mode)")]] TestConfig : public rsl::cli {
   rsl::testing::TestRoot tree;
@@ -69,7 +55,7 @@ public:
     rsl::testing::TestRoot new_tree;
     // rebuild the test tree with filters applied
     for (auto&& test : tree) {
-      auto full_name = join(test.full_name, "::");
+      auto full_name = rsl::join_str(test.full_name, "::");
 
       for (auto const& name : names) {
         if (name == full_name || name == test.name || name == test.full_name[0]) {
