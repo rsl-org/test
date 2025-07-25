@@ -7,7 +7,7 @@
 
 #include <rsl/assert>
 #include <rsl/repr>
-#include <libassert/assert.hpp>
+#include <rsl/testing/assert.hpp>
 
 #include <rsl/testing/test_case.hpp>
 

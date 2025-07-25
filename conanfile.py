@@ -37,7 +37,7 @@ class rsltestRecipe(ConanFile):
             self.options.rm_safe("fPIC")
 
     def requirements(self):
-        self.requires("libassert/2.1.5", transitive_headers=True, transitive_libs=True)
+        self.requires("libassert/dev", transitive_headers=True, transitive_libs=True)
         self.requires("rsl-config/0.1", transitive_headers=False, transitive_libs=True)
         self.requires("rsl-xml/0.1", transitive_headers=False, transitive_libs=True)
 

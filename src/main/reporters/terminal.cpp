@@ -2,7 +2,7 @@
 #include <array>
 #include <print>
 #include <algorithm>
-#include <libassert/assert.hpp>
+#include <rsl/testing/assert.hpp>
 
 namespace rsl::testing::_impl {
 class [[=rename("plain")]] ConsoleReporter : public Reporter::Registrar<ConsoleReporter> {

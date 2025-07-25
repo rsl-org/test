@@ -184,17 +184,17 @@ public:
     }
 
     if (!result.stdout.empty()) {
-      section->stdout = {.value=result.stdout};
+      section->stdout = {.value = result.stdout};
     }
-    
+
     if (!result.stderr.empty()) {
-      section->stderr = {.value=result.stderr};
+      section->stderr = {.value = result.stderr};
     }
 
     if (result.passed) {
       ++section->results.successes;
     } else {
-      section->failure = {.value=result.error};
+      section->failure = {.value = result.error};
       ++section->results.failures;
     }
     section->results.durationInSeconds += result.duration_ms / 1000.;
@@ -202,10 +202,10 @@ public:
     // <Expression success="false" type="REQUIRE"
     // filename="/home/che/src/scratchpad/catch_test/src/test.cpp" line="16">
     //   <Original>
-    //     false
+    //     x == false
     //   </Original>
     //   <Expanded>
-    //     false
+    //     false == false
     //   </Expanded>
     // </Expression>
   }

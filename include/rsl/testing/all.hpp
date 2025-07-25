@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#include <libassert/assert.hpp>
+#include <rsl/testing/assert.hpp>
 
 #include <rsl/testing/annotations.hpp>
 #include <rsl/testing/test.hpp>

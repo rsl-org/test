@@ -1,7 +1,8 @@
 #include <algorithm>
 #include <print>
+#include <chrono>
 
-#include <libassert/assert.hpp>
+#include <rsl/testing/assert.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/output.hpp>
 #include <rsl/testing/_testing_impl/discovery.hpp>
@@ -24,10 +25,20 @@ void failure_handler(libassert::assertion_info const& info) {
 }
 
 namespace rsl::testing {
-std::set<TestDef>& _testing_impl::registry() {
+namespace _testing_impl {
+std::set<TestDef>& registry() {
   static std::set<TestDef> data;
   return data;
 }
+
+std::vector<AssertionInfo>* assertion_counter(std::vector<AssertionInfo>* new_counter) {
+  static std::vector<AssertionInfo>* counter = nullptr;
+  if (new_counter != nullptr) {
+    counter = new_counter;
+  }
+  return counter;
+}
+}  // namespace _testing_impl
 
 bool TestRoot::run(Reporter* reporter) {
   libassert::set_failure_handler(failure_handler);
@@ -55,9 +66,15 @@ bool TestNamespace::run(Reporter* reporter) {
 
     std::vector<TestResult> results;
     for (auto const& test_run : test.get_tests()) {
+      std::vector<_testing_impl::AssertionInfo> assertions;
+      _testing_impl::assertion_counter(&assertions);
+
       reporter->before_test(test_run);
       auto result = test_run.run();
       reporter->after_test(result);
+
+      _testing_impl::assertion_counter(nullptr);
+      std::println("assertion count: {}", assertions.size());
       results.push_back(result);
     }
 

@@ -15,7 +15,7 @@
 #include "_testing_impl/fixture.hpp"
 #include "_testing_impl/annotations.hpp"
 
-#include <libassert/assert.hpp>
+#include <rsl/testing/assert.hpp>
 
 namespace rsl::testing {
 struct assertion_failure : std::runtime_error {
