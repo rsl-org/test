@@ -11,7 +11,13 @@ consteval std::vector<rsl::testing::ParamSet> make_tparams() {
 [[=rsl::tparams(make_tparams)]]
 [[=rsl::tparams({{^^int, 10}, {^^float, 21}})]]
 [[=rsl::params({{42, 'c'}, {12, 'b'}})]]
-constexpr inline auto tparam_gt_5 = []<typename T, int I>(int a, char b) static {
+constexpr inline auto tparam_gt_5 = []<typename T, unsigned I>(int a, char b) static {
     ASSERT(I > 5);
 };
+
+struct TestAggregate{ unsigned value; };
+
+[[=rsl::test]]
+[[=rsl::tparams({{TestAggregate{42}}, {TestAggregate{12}}})]]
+constexpr inline auto tparam_aggregate = []<TestAggregate>() static {};
 }  // namespace

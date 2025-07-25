@@ -6,6 +6,7 @@
 #include <tuple>
 
 #include <rsl/assert>
+#include <rsl/repr>
 #include <libassert/assert.hpp>
 
 #include <rsl/testing/test_case.hpp>
@@ -56,24 +57,13 @@ struct TestRunner {
     }
 
     if constexpr (has_template_arguments(Target)) {
-      name += "<";
-      bool first = true;
-      template for (constexpr auto T : define_static_array(template_arguments_of(Target))) {
-        if (first) {
-          first = false;
-        } else {
-          name += ", ";
-        }
-        // TODO stringify aliases properly
-        name += display_string_of(T);
-      }
-      name += ">";
+      name += rsl::serializer::stringify_template_args(Target);
     }
     name += std::apply(
         [](auto&&... args) {
           std::string result = "(";
           std::size_t i      = 0;
-          ((result += (i++ ? ", " : "") + libassert::stringify(args)), ...);
+          ((result += (i++ ? ", " : "") + repr(args)), ...);
           result += ")";
           return result;
         },
