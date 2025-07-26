@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <ranges>
 #include <print>
 #include <chrono>
 
@@ -26,7 +27,7 @@ void cleanup_frames(cpptrace::stacktrace& trace, std::string_view test_name) {
 
 void failure_handler(libassert::assertion_info const& info) {
   // libassert::enable_virtual_terminal_processing_if_needed();  // for terminal colors on windows
-  constexpr bool Colorize = true;
+  constexpr bool Colorize = false;
   auto width              = libassert::terminal_width(libassert::stderr_fileno);
   const auto& scheme  = Colorize ? libassert::get_color_scheme() : libassert::color_scheme::blank;
   std::string message = std::string(info.action()) + " at " + info.location() + ":";
@@ -34,12 +35,13 @@ void failure_handler(libassert::assertion_info const& info) {
     message += " " + *info.message;
   }
   message += "\n";
-  message += info.statement(scheme) + info.print_binary_diagnostics(width, scheme) +
-             info.print_extra_diagnostics(width, scheme);// + info.print_stacktrace(width, scheme);
+  message +=
+      info.statement(scheme) + info.print_binary_diagnostics(width, scheme) +
+      info.print_extra_diagnostics(width, scheme);  // + info.print_stacktrace(width, scheme);
 
   auto trace = info.get_stacktrace();
-  cleanup_frames(trace,  rsl::testing::_testing_impl::assertion_counter().test_name);
-  message += trace.to_string(true);
+  cleanup_frames(trace, rsl::testing::_testing_impl::assertion_counter().test_name);
+  message += trace.to_string(Colorize);
   throw rsl::testing::assertion_failure(message);
 }
 
@@ -82,15 +84,15 @@ bool TestNamespace::run(Reporter* reporter) {
 
     std::vector<TestResult> results;
     for (auto const& test_run : test.get_tests()) {
-      auto& tracker = _testing_impl::assertion_counter();
+      auto& tracker      = _testing_impl::assertion_counter();
       tracker.assertions = {};
-      tracker.test_name = join_str(test.full_name, "::");
+      tracker.test_name  = join_str(test.full_name, "::");
 
       reporter->before_test(test_run);
       auto result = test_run.run();
       reporter->after_test(result);
 
-      std::println("assertion count: {}", tracker.assertions.size());
+      result.assertions = tracker.assertions;
       results.push_back(result);
     }
 
@@ -116,16 +118,16 @@ TestResult TestCase::run() const {
     ret.duration_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
     return ret;
   } catch (assertion_failure const& failure) {
-    ret.error += failure.what();
+    ret.failure += failure.what();
   } catch (std::exception const& exc) {  //
-    ret.error += exc.what();
+    ret.exception += exc.what();
   } catch (std::string const& msg) {  //
-    ret.error += msg;
+    ret.failure += msg;
   } catch (std::string_view msg) {  //
-    ret.error += msg;
+    ret.failure += msg;
   } catch (char const* msg) {  //
-    ret.error += msg;
-  } catch (...) { ret.error += "unknown exception thrown"; }
+    ret.failure += msg;
+  } catch (...) { ret.exception += "unknown exception thrown"; }
 
   ret.passed = test->expect_failure;
   return ret;
@@ -195,6 +197,31 @@ std::size_t TestNamespace::count() const {
     total += ns.count();
   }
   return total;
+}
+
+void TestNamespace::filter(std::span<std::string const> parts) {
+  if (parts.empty()) {
+    return;
+  }
+
+  std::string_view current         = parts.front();
+  std::span<std::string const> next = parts.subspan(1);
+
+  auto it = std::ranges::find_if(children, [&](TestNamespace& ns) { return ns.name == current; });
+
+  if (it != children.end()) {
+    tests.clear();
+    it->filter(next);
+    if (it->children.empty() && it->tests.empty()) {
+      children.clear();
+    } else {
+      children = {*it};
+    }
+    return;
+  } else {
+    std::erase_if(tests, [&](const Test& t) { return t.name != current; });
+    children.clear();
+  }
 }
 
 TestRoot get_tests() {

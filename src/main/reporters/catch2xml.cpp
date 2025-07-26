@@ -1,3 +1,4 @@
+#include <numeric>
 #include <print>
 #include <string>
 #include <optional>
@@ -101,7 +102,13 @@ struct TestCase {
   void update_results() {
     for (auto& section : sections) {
       section.update_results();
+
+      // TODO this is no good, we need to count skips in sections
+      result.skips += unsigned(section.results.skipped);
     }
+    result.success = std::ranges::none_of(sections, [](Section const& section) {
+      return section.results.failures > section.results.expectedFailures;
+    });
   }
 };
 
@@ -194,7 +201,7 @@ public:
     if (result.passed) {
       ++section->results.successes;
     } else {
-      section->failure = {.value = result.error};
+      section->failure = {.value = result.failure};
       ++section->results.failures;
     }
     section->results.durationInSeconds += result.duration_ms / 1000.;

@@ -3,20 +3,21 @@
 #include <vector>
 #include <string_view>
 
-namespace rsl::testing::_testing_impl {
+namespace rsl::testing {
 struct AssertionInfo {
   std::string_view raw;
   std::string_view expanded;
   bool success;
 };
-
+namespace _testing_impl {
 struct AssertionTracker {
   std::vector<AssertionInfo> assertions;
   std::string test_name;
 };
 
 AssertionTracker& assertion_counter();
-}  // namespace rsl::testing::_testing_impl
+}  // namespace _testing_impl
+}  // namespace rsl::testing
 
 #define LIBASSERT_ASSERT_MAIN_BODY(expr,                                                       \
                                    name,                                                       \
@@ -38,5 +39,5 @@ AssertionTracker& assertion_counter();
                                            libassert_params LIBASSERT_VA_ARGS(__VA_ARGS__)     \
                                                pretty_function_arg);                           \
   }
-
+#define LIBASSERT_BREAK_ON_FAIL
 #include <libassert/assert.hpp>

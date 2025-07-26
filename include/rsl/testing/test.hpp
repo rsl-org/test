@@ -105,12 +105,15 @@ struct TestNamespace {
     bool operator==(iterator const& other) const;
   };
 
+  [[nodiscard]] bool is_empty() const { return tests.empty() && children.empty(); }
   [[nodiscard]] iterator begin() const { return iterator{*this}; }
   [[nodiscard]] static iterator end() { return {}; }
   void insert(const Test& test, size_t i = 0);
 
   [[nodiscard]] std::size_t count() const;
   bool run(Reporter* reporter);
+
+  void filter(std::span<std::string const> parts);
 };
 
 struct TestRoot : TestNamespace {
