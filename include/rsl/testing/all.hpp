@@ -10,11 +10,18 @@
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
 namespace rsl {
-using testing::expect_failure;
 using testing::fixture;
-using testing::params;
+using testing::fuzz;
+using testing::property_test;
 using testing::test;
+
+using testing::params;
 using testing::tparams;
+
+using testing::expect_failure;
+using testing::rename;
+using testing::skip;
+using testing::skip_if;
 
 }  // namespace rsl
 

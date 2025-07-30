@@ -5,10 +5,17 @@
 
 namespace rsl::testing {
 
+enum class TestOutcome: uint8_t {
+  FAIL,
+  PASS,
+  SKIP
+};
+
 struct TestResult {
   class Test const* test;
   std::string name;
-  bool passed;
+
+  TestOutcome outcome;
   double duration_ms;
 
   std::string failure;

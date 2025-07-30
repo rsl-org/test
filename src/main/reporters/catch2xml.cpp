@@ -198,11 +198,17 @@ public:
       section->stderr = {.value = result.stderr};
     }
 
-    if (result.passed) {
-      ++section->results.successes;
-    } else {
-      section->failure = {.value = result.failure};
-      ++section->results.failures;
+    switch (result.outcome) {
+      using enum TestOutcome;
+      case PASS: ++section->results.successes; break;
+      case FAIL:
+        section->failure = {.value = result.failure};
+        ++section->results.failures;
+        break;
+      case SKIP:
+        section->results.skipped = true;
+        ++tc.result.skips;
+        break;
     }
     section->results.durationInSeconds += result.duration_ms / 1000.;
 

@@ -14,7 +14,7 @@ public:
     auto const color = std::array{must_colorize ? "\033[32m" : "", must_colorize ? "\033[31m" : ""};
     const char* const reset = must_colorize ? "\033[0m" : "";
 
-    if (result.passed) {
+    if (result.outcome == TestOutcome::PASS) {
       std::print("[{}       OK {}] {} ({:.3f} ms)\n",
                  color[0],
                  reset,
@@ -32,7 +32,7 @@ public:
     }
   }
   void after_run(std::span<TestResult> results) override {
-    auto passed = std::ranges::count_if(results, [](auto& r) { return r.passed; });
+    auto passed = std::ranges::count_if(results, [](auto& r) { return r.outcome == TestOutcome::PASS; });
     std::print("=== Summary ===\n{} / {} tests passed.\n", passed, results.size());
   }
 

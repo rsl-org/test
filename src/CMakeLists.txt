@@ -1,4 +1,4 @@
-target_sources(rsltest PRIVATE 
+target_sources(rsltest PUBLIC 
     capture.cpp
     test.cpp
 )

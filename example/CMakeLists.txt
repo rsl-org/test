@@ -3,6 +3,7 @@ target_sources(example_test PRIVATE
     tparams.cpp
     params.cpp
     fixtures.cpp
+    conditional.cpp
 )
 
 add_executable(params_debug params_debug.cpp)

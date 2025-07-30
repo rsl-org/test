@@ -1,4 +1,5 @@
 #pragma once
+#include <type_traits>
 #include <vector>
 #include <initializer_list>
 #include <meta>
@@ -29,15 +30,32 @@ struct Skip {
   bool (*value)() = &_testing_impl::constant_predicate<true>;
 };
 
-struct SkipIf {
-  static consteval Skip operator()(auto condition) {
-    // TODO wrap arbitrary conditions
-    return Skip();
-  }
-};
 
-struct Rename {
-  rsl::string_view value;
+namespace _impl { 
+template <typename T, bool T::*condition>
+bool wrap_cli_nsdm() {
+  return T::get().*condition;
+}
+}
+
+struct SkipIf {
+  static consteval Skip operator()(bool condition) {
+    return {extract<bool (*)()>(
+      substitute(^^_testing_impl::constant_predicate, {std::meta::reflect_constant(condition)}))};
+    }
+    
+    static consteval Skip operator()(bool (*condition)()) { return {condition}; }
+    
+    template <typename T>
+    requires requires { T::get(); }
+    static consteval Skip operator()(bool T::* condition)  {
+      return {extract<bool (*)()>(
+        substitute(^^_impl::wrap_cli_nsdm, {^^T, std::meta::reflect_constant(condition)}))};
+      }
+    };
+    
+    struct Rename {
+      rsl::string_view value;
 
   static consteval Rename operator()(std::string_view new_name) {
     return Rename(define_static_string(new_name));

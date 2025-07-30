@@ -10,6 +10,7 @@
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
 #include "capture.hpp"
+#include "rsl/testing/test_case.hpp"
 
 #include <cpptrace/basic.hpp>
 #include <cpptrace/utils.hpp>
@@ -81,18 +82,27 @@ bool TestNamespace::run(Reporter* reporter) {
   for (auto& test : tests) {
     auto runs = test.get_tests();
     reporter->before_test_group(test);
-
     std::vector<TestResult> results;
-    for (auto const& test_run : test.get_tests()) {
-      auto& tracker      = _testing_impl::assertion_counter();
-      tracker.assertions = {};
-      tracker.test_name  = join_str(test.full_name, "::");
+    if (!test.skip()) {
+      std::vector<TestResult> results;
+      for (auto const& test_run : test.get_tests()) {
+        auto& tracker      = _testing_impl::assertion_counter();
+        tracker.assertions = {};
+        tracker.test_name  = join_str(test.full_name, "::");
 
-      reporter->before_test(test_run);
-      auto result = test_run.run();
+        reporter->before_test(test_run);
+        auto result = test_run.run();
+        reporter->after_test(result);
+
+        result.assertions = tracker.assertions;
+        results.push_back(result);
+      }
+    } else {
+      reporter->before_test(TestCase{&test, +[]{}, std::string(test.name)});
+      
+      // TODO stringify skipped tests properly
+      auto result = TestResult{&test, std::string(test.name) + "(...)", TestOutcome::PASS};
       reporter->after_test(result);
-
-      result.assertions = tracker.assertions;
       results.push_back(result);
     }
 
@@ -114,7 +124,7 @@ TestResult TestCase::run() const {
     fnc();
     auto t1 = std::chrono::steady_clock::now();
 
-    ret.passed      = !test->expect_failure;
+    ret.outcome      = TestOutcome(!test->expect_failure);
     ret.duration_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
     return ret;
   } catch (assertion_failure const& failure) {
@@ -129,7 +139,7 @@ TestResult TestCase::run() const {
     ret.failure += msg;
   } catch (...) { ret.exception += "unknown exception thrown"; }
 
-  ret.passed = test->expect_failure;
+  ret.outcome = TestOutcome(test->expect_failure);
   return ret;
 }
 
@@ -204,7 +214,7 @@ void TestNamespace::filter(std::span<std::string const> parts) {
     return;
   }
 
-  std::string_view current         = parts.front();
+  std::string_view current          = parts.front();
   std::span<std::string const> next = parts.subspan(1);
 
   auto it = std::ranges::find_if(children, [&](TestNamespace& ns) { return ns.name == current; });
