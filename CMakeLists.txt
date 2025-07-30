@@ -5,7 +5,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 26)
 
 project(rsltest CXX)
-add_library(rsltest )
+add_library(rsltest SHARED)
 
 set_target_properties(rsltest PROPERTIES OUTPUT_NAME rsltest)
 target_compile_options(rsltest PUBLIC 
@@ -20,7 +20,7 @@ target_include_directories(rsltest PUBLIC
 find_package(libassert REQUIRED)
 target_link_libraries(rsltest PUBLIC libassert::assert)
 
-add_library(rsltest_main )
+add_library(rsltest_main SHARED)
 
 target_link_libraries(rsltest_main PUBLIC rsltest)
 
