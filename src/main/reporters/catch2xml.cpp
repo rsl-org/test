@@ -202,7 +202,11 @@ public:
       using enum TestOutcome;
       case PASS: ++section->results.successes; break;
       case FAIL:
-        section->failure = {.value = result.failure};
+        if (result.failure.has_value()) {
+          section->failure = Failure{.filename = std::string(result.failure->sloc.file),
+                                     .line     = result.failure->sloc.line,
+                                     .value    = result.failure->message};
+        }
         ++section->results.failures;
         break;
       case SKIP:

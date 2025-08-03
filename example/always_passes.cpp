@@ -3,7 +3,8 @@
 
 namespace demo {
 auto zoinks() {
-  ASSERT(false, "oh no");
+  bool x = true;
+  ASSERT(x == false);
 }
 
 [[= rsl::test]] void always_passes() {

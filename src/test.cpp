@@ -3,6 +3,7 @@
 #include <print>
 #include <chrono>
 
+#include <rsl/source_location>
 #include <rsl/testing/assert.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/output.hpp>
@@ -43,7 +44,7 @@ void failure_handler(libassert::assertion_info const& info) {
   auto trace = info.get_stacktrace();
   cleanup_frames(trace, rsl::testing::_testing_impl::assertion_counter().test_name);
   message += trace.to_string(Colorize);
-  throw rsl::testing::assertion_failure(message);
+  throw rsl::testing::assertion_failure(message, rsl::source_location(info.file_name, info.function, info.line));
 }
 
 namespace rsl::testing {
@@ -101,7 +102,7 @@ bool TestNamespace::run(Reporter* reporter) {
       reporter->before_test(TestCase{&test, +[]{}, std::string(test.name)});
       
       // TODO stringify skipped tests properly
-      auto result = TestResult{&test, std::string(test.name) + "(...)", TestOutcome::PASS};
+      auto result = TestResult{&test, std::string(test.name) + "(...)", TestOutcome::SKIP};
       reporter->after_test(result);
       results.push_back(result);
     }
@@ -128,15 +129,15 @@ TestResult TestCase::run() const {
     ret.duration_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
     return ret;
   } catch (assertion_failure const& failure) {
-    ret.failure += failure.what();
+    ret.failure = failure;
   } catch (std::exception const& exc) {  //
     ret.exception += exc.what();
   } catch (std::string const& msg) {  //
-    ret.failure += msg;
+    ret.exception += msg;
   } catch (std::string_view msg) {  //
-    ret.failure += msg;
+    ret.exception += msg;
   } catch (char const* msg) {  //
-    ret.failure += msg;
+    ret.exception += msg;
   } catch (...) { ret.exception += "unknown exception thrown"; }
 
   ret.outcome = TestOutcome(test->expect_failure);

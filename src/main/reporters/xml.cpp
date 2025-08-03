@@ -23,7 +23,7 @@ public:
   void after_test(TestResult const& result) override {
     auto node = testcase{.name=std::string(result.name), .time=result.duration_ms / 1000.};
     if (result.outcome == TestOutcome::FAIL) {
-      node.failure = result.failure + "\n";
+      node.failure = result.failure->message + "\n";
     }
     suite.tests.push_back(node);
   }

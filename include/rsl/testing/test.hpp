@@ -17,11 +17,9 @@
 
 #include <rsl/testing/assert.hpp>
 
-namespace rsl::testing {
-struct assertion_failure : std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
 
+namespace rsl::testing {
+ 
 class Test {
   using runner_type = std::vector<TestCase> (Test::*)() const;
   runner_type get_tests_impl;
@@ -30,6 +28,7 @@ class Test {
   std::vector<TestCase> expand_test() const {
     return _testing_impl::Expand<R, Ann>{this}.runs;
   }
+
 public:
   std::source_location sloc;
   std::string_view name;                   // raw name

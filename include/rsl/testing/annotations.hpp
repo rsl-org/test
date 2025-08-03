@@ -30,32 +30,33 @@ struct Skip {
   bool (*value)() = &_testing_impl::constant_predicate<true>;
 };
 
-
-namespace _impl { 
-template <typename T, bool T::*condition>
+namespace _impl {
+template <typename T, bool T::* condition>
 bool wrap_cli_nsdm() {
   return T::get().*condition;
 }
-}
+}  // namespace _impl
 
 struct SkipIf {
   static consteval Skip operator()(bool condition) {
     return {extract<bool (*)()>(
-      substitute(^^_testing_impl::constant_predicate, {std::meta::reflect_constant(condition)}))};
+        substitute(^^_testing_impl::constant_predicate, {std::meta::reflect_constant(condition)}))};
+  }
+
+  static consteval Skip operator()(bool (*condition)()) { return {condition}; }
+
+  template <typename T>
+    requires requires {
+      { T::get() } -> std::same_as<T&>;
     }
-    
-    static consteval Skip operator()(bool (*condition)()) { return {condition}; }
-    
-    template <typename T>
-    requires requires { T::get(); }
-    static consteval Skip operator()(bool T::* condition)  {
-      return {extract<bool (*)()>(
+  static consteval Skip operator()(bool T::* condition) {
+    return {extract<bool (*)()>(
         substitute(^^_impl::wrap_cli_nsdm, {^^T, std::meta::reflect_constant(condition)}))};
-      }
-    };
-    
-    struct Rename {
-      rsl::string_view value;
+  }
+};
+
+struct Rename {
+  rsl::string_view value;
 
   static consteval Rename operator()(std::string_view new_name) {
     return Rename(define_static_string(new_name));

@@ -18,7 +18,7 @@ struct TestResult {
   TestOutcome outcome;
   double duration_ms;
 
-  std::string failure;
+  std::optional<assertion_failure> failure;
   std::string exception;
   std::string stdout;
   std::string stderr;

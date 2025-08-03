@@ -26,7 +26,7 @@ public:
                  reset,
                  result.name,
                  result.duration_ms);
-      std::print("{}ERROR{}: {}\n", color[1], reset, result.failure);
+      std::print("{}ERROR{}: {}\n", color[1], reset, result.failure->message);
       std::print("==== {}stdout{} ====\n{}\n", color[1], reset, result.stdout);
       std::print("==== {}stderr{} ====\n{}\n", color[1], reset, result.stderr);
     }

@@ -1,9 +1,22 @@
 #pragma once
 #include <cstddef>
+#include <exception>
 #include <vector>
 #include <string_view>
 
+#include <rsl/source_location>
+
 namespace rsl::testing {
+
+struct assertion_failure : std::exception {
+  std::string message;
+  rsl::source_location sloc;
+
+  assertion_failure(std::string_view message, rsl::source_location sloc)
+      : message(std::string(message))
+      , sloc(sloc) {}
+};
+  
 struct AssertionInfo {
   std::string_view raw;
   std::string_view expanded;
