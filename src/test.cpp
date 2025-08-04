@@ -6,12 +6,12 @@
 #include <rsl/source_location>
 #include <rsl/testing/assert.hpp>
 #include <rsl/testing/test.hpp>
+#include <rsl/testing/result.hpp>
 #include <rsl/testing/output.hpp>
 #include <rsl/testing/util.hpp>
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
 #include "capture.hpp"
-#include "rsl/testing/test_case.hpp"
 
 #include <cpptrace/basic.hpp>
 #include <cpptrace/utils.hpp>
@@ -182,6 +182,33 @@ bool TestNamespace::iterator::operator==(iterator const& other) const {
     return false;
   }
   return elements == other.elements;
+}
+
+// TODO get rid of duplicated code
+void ResultNamespace::insert(TestResult const& test, std::size_t i) {
+  if (i == test.test->full_name.size() - 1) {
+    tests.push_back(test);
+    return;
+  }
+
+  auto it = std::ranges::find_if(children, [&](const ResultNamespace& ns) {
+    return ns.name == test.test->full_name[i];
+  });
+
+  if (it == children.end()) {
+    children.emplace_back(test.test->full_name[i]);
+    it = std::prev(children.end());
+  }
+
+  it->insert(test, i + 1);
+}
+
+std::size_t ResultNamespace::count() const {
+  std::size_t total = tests.size();
+  for (auto const& ns : children) {
+    total += ns.count();
+  }
+  return total;
 }
 
 void TestNamespace::insert(Test const& test, std::size_t i) {

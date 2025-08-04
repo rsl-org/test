@@ -8,7 +8,7 @@
 #include <set>
 #include <algorithm>
 
-#include "test_case.hpp"
+#include "result.hpp"
 
 #include "_testing_impl/util.hpp"
 #include "_testing_impl/expand.hpp"
@@ -19,14 +19,28 @@
 
 
 namespace rsl::testing {
- 
+struct TestCase {
+  class Test const* test;
+  std::function<void()> fnc;
+  std::string name;
+
+  [[nodiscard]] TestResult run() const;
+};
+
+struct FuzzTarget {
+  // stringifying name is pointless here, perhaps do it after failure
+  class Test const* test;
+  int (*run)(uint8_t const*, size_t);
+  size_t (*mutate)(uint8_t*, size_t, size_t, unsigned int);
+};
+
 class Test {
   using runner_type = std::vector<TestCase> (Test::*)() const;
   runner_type get_tests_impl;
 
   template <std::meta::info R, _testing_impl::Annotations Ann>
   std::vector<TestCase> expand_test() const {
-    return _testing_impl::Expand<R, Ann>{this}.runs;
+    return _testing_impl::Expand<TestCase, R, Ann>{this}.runs;
   }
 
 public:

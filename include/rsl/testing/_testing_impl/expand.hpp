@@ -9,7 +9,7 @@
 #include <rsl/repr>
 #include <rsl/testing/assert.hpp>
 
-#include <rsl/testing/test_case.hpp>
+#include <rsl/testing/result.hpp>
 
 #include "fixture.hpp"
 #include "annotations.hpp"
@@ -29,7 +29,7 @@ struct FuzzRunner {
   }
 };
 
-template <std::meta::info Def, std::meta::info Target>
+template <typename TC, std::meta::info Def, std::meta::info Target>
 struct TestRunner {
   template <typename T>
   static void run_one(T const& tuple) {
@@ -72,14 +72,14 @@ struct TestRunner {
   }
 
   template <typename... Ts>
-  static TestCase bind(Test const* group, std::tuple<Ts...> args) {
+  static TC bind(Test const* group, std::tuple<Ts...> args) {
     return {group, std::bind_front(run_one<std::tuple<Ts...>>, args), get_name(args)};
   }
 };
 
-template <std::meta::info R, _testing_impl::Annotations A>
+template <typename TC, std::meta::info R, _testing_impl::Annotations A>
 struct Expand {
-  std::vector<TestCase> runs;
+  std::vector<TC> runs;
   Test const* group;
 
   template <typename Runner, annotations::Params Generator>
@@ -103,7 +103,7 @@ struct Expand {
 
   template <std::meta::info Target>
   void expand_params() {
-    using runner = TestRunner<R, Target>;
+    using runner = TestRunner<TC, R, Target>;
 
     if constexpr (A.params.size() == 0) {
       // expand fixtures

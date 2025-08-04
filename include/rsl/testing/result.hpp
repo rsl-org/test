@@ -26,18 +26,12 @@ struct TestResult {
   std::vector<AssertionInfo> assertions;
 };
 
-struct TestCase {
-  class Test const* test;
-  std::function<void()> fnc;
-  std::string name;
+struct ResultNamespace {
+  std::string_view name;
+  std::vector<TestResult> tests;
+  std::vector<ResultNamespace> children;
 
-  [[nodiscard]] TestResult run() const;
-};
-
-struct FuzzTarget {
-  // stringifying name is pointless here, perhaps do it after failure
-  class Test const* test;
-  int (*run)(uint8_t const*, size_t);
-  size_t (*mutate)(uint8_t*, size_t, size_t, unsigned int);
+  void insert(TestResult const& test, size_t i = 0);
+  [[nodiscard]] std::size_t count() const;
 };
 }  // namespace rsl::testing
