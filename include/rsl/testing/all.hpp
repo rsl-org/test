@@ -12,7 +12,6 @@
 namespace rsl {
 using testing::fixture;
 using testing::fuzz;
-using testing::property_test;
 using testing::test;
 
 using testing::params;

@@ -9,10 +9,10 @@
 #include <rsl/repr>
 #include <rsl/testing/assert.hpp>
 
+#include <rsl/testing/annotations.hpp>
 #include <rsl/testing/result.hpp>
 
 #include "fixture.hpp"
-#include "annotations.hpp"
 
 namespace rsl::testing::_testing_impl {
 template <std::meta::info R, std::meta::info Target>

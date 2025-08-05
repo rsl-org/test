@@ -5,7 +5,7 @@
 #include <meta>
 #include <unordered_map>
 
-#include "annotations.hpp"
+#include <rsl/testing/annotations.hpp>
 
 namespace rsl::testing::_testing_impl {
 template <class Base, class... Args>

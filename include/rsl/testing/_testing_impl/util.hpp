@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string_view>
 #include <meta>
+#include <algorithm>
 
 namespace rsl::testing::_testing_impl {
 template <bool V>

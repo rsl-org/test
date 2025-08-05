@@ -11,9 +11,9 @@
 #endif
 
 #include <rsl/testing/test.hpp>
+#include <rsl/testing/annotations.hpp>
 
 #include "fixture.hpp"
-#include "annotations.hpp"
 #include "util.hpp"
 
 namespace rsl::testing::_testing_impl {

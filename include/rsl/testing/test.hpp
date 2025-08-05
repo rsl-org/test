@@ -2,21 +2,16 @@
 #include <string>
 #include <functional>
 #include <meta>
-#include <ranges>
 #include <iterator>
 #include <deque>
-#include <set>
-#include <algorithm>
 
 #include "result.hpp"
 
 #include "_testing_impl/util.hpp"
 #include "_testing_impl/expand.hpp"
-#include "_testing_impl/fixture.hpp"
-#include "_testing_impl/annotations.hpp"
 
+#include <rsl/testing/annotations.hpp>
 #include <rsl/testing/assert.hpp>
-
 
 namespace rsl::testing {
 struct TestCase {
@@ -49,22 +44,19 @@ public:
   std::string_view preferred_name;         // from annotations
   std::span<char const* const> full_name;  // fully qualified name
 
-  bool expect_failure;    // invert test checking
-  bool (*skip)();         // function to support conditional skipping
-  bool is_property_test;  // expand missing args as fixtures if false,
-                          // otherwise parameterize with domain
+  bool expect_failure;  // invert test checking
+  bool (*skip)();       // function to support conditional skipping
   bool is_fuzz_test;
 
   Test() = delete;
   consteval explicit Test(std::meta::info test, std::meta::info annotation_anchor)
       : sloc(source_location_of(test))
       , name(define_static_string(identifier_of(test))) {
-    auto ann         = _testing_impl::Annotations(annotation_anchor);
-    preferred_name   = ann.name;
-    expect_failure   = ann.expect_failure;
-    skip             = ann.skip;
-    is_property_test = ann.is_property_test;
-    is_fuzz_test     = ann.is_fuzz_test;
+    auto ann       = _testing_impl::Annotations(annotation_anchor);
+    preferred_name = ann.name;
+    expect_failure = ann.expect_failure;
+    skip           = ann.skip;
+    is_fuzz_test   = ann.is_fuzz_test;
 
     get_tests_impl = extract<runner_type>(
         substitute(^^expand_test, {reflect_constant(test), std::meta::reflect_constant(ann)}));
