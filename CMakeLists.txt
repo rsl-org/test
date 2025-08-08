@@ -24,9 +24,11 @@ add_library(rsltest_main SHARED)
 
 target_link_libraries(rsltest_main PUBLIC rsltest)
 
+find_package(rsl-util REQUIRED)
 find_package(rsl-config REQUIRED)
 find_package(rsl-xml REQUIRED)
 
+target_link_libraries(rsltest PUBLIC rsl::util)
 target_link_libraries(rsltest PUBLIC rsl::config)
 target_link_libraries(rsltest_main PUBLIC rsl::xml)
 
