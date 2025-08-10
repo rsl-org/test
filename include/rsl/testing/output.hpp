@@ -23,13 +23,13 @@ struct Reporter : _testing_impl::Factory<Reporter> {
 
   virtual ~Reporter() = default;
   virtual void before_run(TestNamespace const& tests) {}
-  virtual void after_run(std::span<TestResult> results) {}
+  virtual void after_run(std::span<Result> results) {}
 
   virtual void before_test_group(Test const& test) {}
-  virtual void after_test_group(std::span<TestResult> results) {}
+  virtual void after_test_group(std::span<Result> results) {}
 
   virtual void before_test(TestCase const& test) = 0;
-  virtual void after_test(TestResult const& result)   = 0;
+  virtual void after_test(Result const& result)   = 0;
 
   virtual void list_tests(TestNamespace const& tests);
 

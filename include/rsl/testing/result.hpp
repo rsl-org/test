@@ -11,7 +11,7 @@ enum class TestOutcome: uint8_t {
   SKIP
 };
 
-struct TestResult {
+struct Result {
   class Test const* test;
   std::string name;
 
@@ -26,12 +26,17 @@ struct TestResult {
   std::vector<AssertionInfo> assertions;
 };
 
+struct TestResult {
+  class Test const* test;
+  std::vector<Result> results;
+};
+
 struct ResultNamespace {
   std::string_view name;
   std::vector<TestResult> tests;
   std::vector<ResultNamespace> children;
 
-  void insert(TestResult const& test, size_t i = 0);
+  void insert(Result const& test, size_t i = 0);
   [[nodiscard]] std::size_t count() const;
 };
 }  // namespace rsl::testing

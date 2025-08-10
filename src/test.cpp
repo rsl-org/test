@@ -83,9 +83,9 @@ bool TestNamespace::run(Reporter* reporter) {
   for (auto& test : tests) {
     auto runs = test.get_tests();
     reporter->before_test_group(test);
-    std::vector<TestResult> results;
+    std::vector<Result> results;
     if (!test.skip()) {
-      std::vector<TestResult> results;
+      std::vector<Result> results;
       for (auto const& test_run : test.get_tests()) {
         auto& tracker      = _testing_impl::assertion_counter();
         tracker.assertions = {};
@@ -102,7 +102,7 @@ bool TestNamespace::run(Reporter* reporter) {
       reporter->before_test(TestCase{&test, +[]{}, std::string(test.name)});
       
       // TODO stringify skipped tests properly
-      auto result = TestResult{&test, std::string(test.name) + "(...)", TestOutcome::SKIP};
+      auto result = Result{&test, std::string(test.name) + "(...)", TestOutcome::SKIP};
       reporter->after_test(result);
       results.push_back(result);
     }
@@ -115,8 +115,8 @@ bool TestNamespace::run(Reporter* reporter) {
   return status;
 }
 
-TestResult TestCase::run() const {
-  auto ret = TestResult{.test = test, .name = name};
+Result TestCase::run() const {
+  auto ret = Result{.test = test, .name = name};
   try {
     Capture _out(stdout, ret.stdout);
     Capture _err(stderr, ret.stderr);
@@ -182,33 +182,6 @@ bool TestNamespace::iterator::operator==(iterator const& other) const {
     return false;
   }
   return elements == other.elements;
-}
-
-// TODO get rid of duplicated code
-void ResultNamespace::insert(TestResult const& test, std::size_t i) {
-  if (i == test.test->full_name.size() - 1) {
-    tests.push_back(test);
-    return;
-  }
-
-  auto it = std::ranges::find_if(children, [&](const ResultNamespace& ns) {
-    return ns.name == test.test->full_name[i];
-  });
-
-  if (it == children.end()) {
-    children.emplace_back(test.test->full_name[i]);
-    it = std::prev(children.end());
-  }
-
-  it->insert(test, i + 1);
-}
-
-std::size_t ResultNamespace::count() const {
-  std::size_t total = tests.size();
-  for (auto const& ns : children) {
-    total += ns.count();
-  }
-  return total;
 }
 
 void TestNamespace::insert(Test const& test, std::size_t i) {

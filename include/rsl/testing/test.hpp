@@ -19,7 +19,7 @@ struct TestCase {
   std::function<void()> fnc;
   std::string name;
 
-  [[nodiscard]] TestResult run() const;
+  [[nodiscard]] Result run() const;
 };
 
 struct FuzzTarget {

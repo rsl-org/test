@@ -170,7 +170,7 @@ class[[= rename("xml")]] Catch2XmlReporter : public Reporter::Registrar<Catch2Xm
 
 public:
   void before_test(rsl::testing::TestCase const& run) override {}
-  void after_test(TestResult const& result) override {
+  void after_test(Result const& result) override {
     TestCase& tc     = report.get_tc(result.test->full_name[0]);
     Section* section = nullptr;
 
@@ -227,7 +227,7 @@ public:
     // </Expression>
   }
 
-  void after_run(std::span<TestResult> results) override { report.update_results(); }
+  void after_run(std::span<Result> results) override { report.update_results(); }
 
   void list_tests(TestNamespace const& tests) override {
     MatchingTests matching{};

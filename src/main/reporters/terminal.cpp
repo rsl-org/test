@@ -9,7 +9,7 @@ class [[=rename("plain")]] ConsoleReporter : public Reporter::Registrar<ConsoleR
 public:
   void before_run(TestNamespace const& tests) override { std::print("Running {} tests...\n", tests.count()); }
   void before_test(TestCase const& test) override { std::print("[ RUN      ] {}\n", test.name); }
-  void after_test(TestResult const& result) override {
+  void after_test(Result const& result) override {
     bool const must_colorize = true;
     auto const color = std::array{must_colorize ? "\033[32m" : "", must_colorize ? "\033[31m" : ""};
     const char* const reset = must_colorize ? "\033[0m" : "";
@@ -31,7 +31,7 @@ public:
       std::print("==== {}stderr{} ====\n{}\n", color[1], reset, result.stderr);
     }
   }
-  void after_run(std::span<TestResult> results) override {
+  void after_run(std::span<Result> results) override {
     auto passed = std::ranges::count_if(results, [](auto& r) { return r.outcome == TestOutcome::PASS; });
     std::print("=== Summary ===\n{} / {} tests passed.\n", passed, results.size());
   }
