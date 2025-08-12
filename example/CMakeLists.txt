@@ -5,7 +5,3 @@ target_sources(example_test PRIVATE
     fixtures.cpp
     conditional.cpp
 )
-# add_executable(params_debug params_debug.cpp)
-# target_compile_options(example_test PUBLIC -fprofile-instr-generate -fcoverage-mapping)
-# target_link_options(example_test PUBLIC -fprofile-instr-generate -fcoverage-mapping)
-# target_link_libraries(params_debug PUBLIC rsltest)

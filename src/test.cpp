@@ -16,6 +16,8 @@
 #include <cpptrace/basic.hpp>
 #include <cpptrace/utils.hpp>
 
+#include "coverage/coverage.hpp"
+
 void cleanup_frames(cpptrace::stacktrace& trace, std::string_view test_name) {
   std::vector<cpptrace::stacktrace_frame> frames;
   for (auto const& frame : trace.frames | std::views::drop(1)) {
@@ -44,7 +46,9 @@ void failure_handler(libassert::assertion_info const& info) {
   auto trace = info.get_stacktrace();
   cleanup_frames(trace, rsl::testing::_testing_impl::assertion_counter().test_name);
   message += trace.to_string(Colorize);
-  throw rsl::testing::assertion_failure(message, rsl::source_location(info.file_name, info.function, info.line));
+  throw rsl::testing::assertion_failure(
+      message,
+      rsl::source_location(info.file_name, info.function, info.line));
 }
 
 namespace rsl::testing {
@@ -99,8 +103,8 @@ bool TestNamespace::run(Reporter* reporter) {
         results.push_back(result);
       }
     } else {
-      reporter->before_test(TestCase{&test, +[]{}, std::string(test.name)});
-      
+      reporter->before_test(TestCase{&test, +[] {}, std::string(test.name)});
+
       // TODO stringify skipped tests properly
       auto result = Result{&test, std::string(test.name) + "(...)", TestOutcome::SKIP};
       reporter->after_test(result);
@@ -115,17 +119,53 @@ bool TestNamespace::run(Reporter* reporter) {
   return status;
 }
 
+static void run_test(void const* test) {
+  (*static_cast<std::function<void()> const*>(test))();
+}
+static auto resolve_pc(std::uintptr_t pc) {
+  auto raw_trace = cpptrace::raw_trace{{pc}};
+  auto trace     = raw_trace.resolve();
+  return trace.frames[0];
+}
+
 Result TestCase::run() const {
   auto ret = Result{.test = test, .name = name};
   try {
-    Capture _out(stdout, ret.stdout);
-    Capture _err(stderr, ret.stderr);
+    // Capture _out(stdout, ret.stdout);
+    // Capture _err(stderr, ret.stderr);
 
     auto t0 = std::chrono::steady_clock::now();
-    fnc();
+    if (_rsl_test_run_with_coverage != nullptr) {
+      // rsltest_cov was linked in -> run with coverage
+      rsl::coverage::CoverageReport* reports = nullptr;
+      std::size_t report_count               = 0;
+
+      _rsl_test_run_with_coverage(run_test,
+                                  static_cast<void const*>(&fnc),
+                                  &reports,
+                                  &report_count);
+      for (std::size_t idx = 0; idx < report_count; ++idx) {
+        auto resolved = resolve_pc(reports[idx].pc);
+        if (resolved.filename.empty() || (int)resolved.line.value() < 0) {
+          continue;
+        }
+        if (resolved.filename.contains("/../include/c++/")) {
+          continue;
+        }
+        std::println("{:x} {}:{}:{} {}",
+                     (uintptr_t)(reports[idx].pc),
+                     resolved.filename,
+                     resolved.line.value(),
+                     resolved.column.value(),
+                     reports[idx].hits);
+      }
+      free(reports);
+    } else {
+      fnc();
+    }
     auto t1 = std::chrono::steady_clock::now();
 
-    ret.outcome      = TestOutcome(!test->expect_failure);
+    ret.outcome     = TestOutcome(!test->expect_failure);
     ret.duration_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
     return ret;
   } catch (assertion_failure const& failure) {

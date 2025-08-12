@@ -4,3 +4,4 @@ target_sources(rsltest PUBLIC
 )
 
 add_subdirectory(main)
+add_subdirectory(coverage)
