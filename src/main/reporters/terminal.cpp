@@ -30,6 +30,9 @@ public:
       std::print("==== {}stdout{} ====\n{}\n", color[1], reset, result.stdout);
       std::print("==== {}stderr{} ====\n{}\n", color[1], reset, result.stderr);
     }
+    for (auto const& [file, coverage] : result.coverage) {
+      std::println("Reached {} lines in file {}", coverage.size(), file);
+    }
   }
   void after_run(std::span<Result> results) override {
     auto passed = std::ranges::count_if(results, [](auto& r) { return r.outcome == TestOutcome::PASS; });

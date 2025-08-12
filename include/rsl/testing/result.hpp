@@ -1,6 +1,7 @@
 #pragma once
-#include <functional>
+#include <cstddef>
 #include <string>
+
 #include "assert.hpp"
 
 namespace rsl::testing {
@@ -9,6 +10,16 @@ enum class TestOutcome: uint8_t {
   FAIL,
   PASS,
   SKIP
+};
+
+struct LineCoverage {
+  std::size_t line = 0;
+  std::size_t count = 0;
+};
+
+struct FileCoverage {
+  std::string filename;
+  std::vector<LineCoverage> coverage;
 };
 
 struct Result {
@@ -24,6 +35,7 @@ struct Result {
   std::string stderr;
   
   std::vector<AssertionInfo> assertions;
+  std::vector<FileCoverage> coverage;
 };
 
 struct TestResult {
