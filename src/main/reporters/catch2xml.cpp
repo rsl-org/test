@@ -227,7 +227,7 @@ public:
     // </Expression>
   }
 
-  void after_run(std::span<Result> results) override { report.update_results(); }
+  void after_run() override { report.update_results(); }
 
   void list_tests(TestNamespace const& tests) override {
     MatchingTests matching{};

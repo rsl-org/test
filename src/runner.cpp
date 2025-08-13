@@ -80,7 +80,7 @@ bool TestRoot::run(Reporter* reporter) {
   bool status = TestNamespace::run(reporter);
   libassert::set_failure_handler(libassert::default_failure_handler);
   // TODO after_run
-  reporter->after_run({});
+  reporter->after_run();
   return status;
 }
 
@@ -98,7 +98,6 @@ bool TestNamespace::run(Reporter* reporter) {
     reporter->before_test_group(test);
     std::vector<Result> results;
     if (!test.skip()) {
-      std::vector<Result> results;
       for (auto const& test_run : test.get_tests()) {
         auto& tracker      = _testing_impl::assertion_counter();
         tracker.assertions = {};
