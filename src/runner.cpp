@@ -105,9 +105,9 @@ bool TestNamespace::run(Reporter* reporter) {
 
         reporter->before_test(test_run);
         auto result = test_run.run();
-        reporter->after_test(result);
-
         result.assertions = tracker.assertions;
+
+        reporter->after_test(result);
         results.push_back(result);
       }
     } else {

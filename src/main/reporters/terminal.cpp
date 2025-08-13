@@ -8,6 +8,7 @@ namespace rsl::testing::_impl {
 class[[= rename("plain")]] ConsoleReporter : public Reporter::Registrar<ConsoleReporter> {
   std::vector<TestOutcome> test_outcomes;
   std::vector<TestOutcome> run_outcomes;
+  std::vector<TestOutcome> assertion_outcomes;
 public:
   void before_run(TestNamespace const& tests) override {
     std::print("Running {} tests...\n", tests.count());
@@ -38,6 +39,9 @@ public:
       std::println("Reached {} lines in file {}", coverage.size(), file);
     }
     run_outcomes.push_back(result.outcome);
+    for (auto const& assertion : result.assertions) {
+      assertion_outcomes.push_back(assertion.success ? TestOutcome::PASS : TestOutcome::FAIL);
+    }
   }
 
   void after_test_group(std::span<Result> results) override {
@@ -65,17 +69,25 @@ public:
         case TestOutcome::SKIP: ++skip; continue;
       }
     }
-
-    std::println("{} {} ran:", fail+pass+skip, label);
-    std::println("    Success: {}", pass);
-    std::println("    Skipped: {}", skip);
-    std::println("    Failure: {}", fail);
+    
+    bool const must_colorize = true;
+    auto const color = std::array{must_colorize ? "\033[32m" : "", must_colorize ? "\033[31m" : ""};
+    const char* const reset = must_colorize ? "\033[0m" : "";
+    
+    std::println("| {:<10} | {}{:^4}{} | {:^4} | {}{:^4}{} || {:^5} |",
+      label, color[0], pass, reset, skip, color[1], fail, reset, pass+skip+fail);
   }
 
   void after_run() override {
     std::println("\n=== Summary ===");
-    print_outcomes(test_outcomes, "tests");
-    print_outcomes(run_outcomes, "test cases");
+    
+    std::puts("+------------+------+------+------++-------+");
+    std::puts("|  Counter   | Pass | Skip | Fail || Total |");
+    std::puts("+------------+------+------+------++-------+");
+    print_outcomes(test_outcomes, "Tests");
+    print_outcomes(run_outcomes, "Test Cases");
+    print_outcomes(assertion_outcomes, "Assertions");
+    std::puts("+------------+------+------+------++-------+");
   }
 
   // [[nodiscard]] bool colorize() const override {

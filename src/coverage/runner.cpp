@@ -43,11 +43,10 @@ extern "C" __attribute__((no_sanitize("coverage"))) void _rsl_test_run_with_cove
   //? data races on counters are acceptable
   //? => coverage counters are only approximate
   using namespace rsl::coverage;
-  std::println("running with coverage");
 
   auto finalize = [&] {
     __sancov_should_track = 0;
-    auto reached          = rsl::coverage::filter_traces();
+    auto reached          = filter_traces();
     // set output
     *output = (CoverageReport*)malloc(sizeof(CoverageReport) * reached.size());
 
@@ -60,7 +59,7 @@ extern "C" __attribute__((no_sanitize("coverage"))) void _rsl_test_run_with_cove
     *output_size = reached.size();
   };
 
-  rsl::coverage::reset_counters();
+  reset_counters();
   __sancov_should_track = 1;
   try {
     fnc(test);

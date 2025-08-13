@@ -4,7 +4,7 @@
 namespace demo {
 auto zoinks(bool zoinks) {
   bool x = true;
-  // ASSERT(x == false);
+  ASSERT(zoinks == false);
   if (zoinks) {
     for (int i = 0; i < 4; ++i) {
       x += std::puts("foo");
