@@ -133,7 +133,7 @@ struct Annotations {  // consteval-only
         // constexpr_assert(skip == nullptr, "Cannot have more than one skip annotation.");
         skip = extract<annotations::Skip>(constant_of(annotation)).value;
       } else if (type == ^^annotations::Rename) {
-        constexpr_assert(name.empty(), "Cannot rename more than once.");
+        constexpr_assert(!name.empty(), "Cannot rename more than once.");
         name = extract<annotations::Rename>(constant_of(annotation)).value;
       } else if (type == ^^annotations::FuzzTag) {
         is_fuzz_test = true;
