@@ -44,6 +44,20 @@ struct TestRunner {
   }
 
   template <typename... Ts>
+  static std::string apply_args_to_name(std::string name, std::tuple<Ts...> args) {
+    name += std::apply(
+        [](auto&&... args) {
+          std::string result = "(";
+          std::size_t i      = 0;
+          ((result += (i++ ? ", " : "") + repr(args)), ...);
+          result += ")";
+          return result;
+        },
+        args);
+    return name;
+  }
+
+  template <typename... Ts>
   static std::string get_name(std::tuple<Ts...> args) {
     std::string name;
     if constexpr (is_variable(Def)) {
@@ -59,21 +73,21 @@ struct TestRunner {
     if constexpr (has_template_arguments(Target)) {
       name += rsl::serializer::stringify_template_args(Target);
     }
-    name += std::apply(
-        [](auto&&... args) {
-          std::string result = "(";
-          std::size_t i      = 0;
-          ((result += (i++ ? ", " : "") + repr(args)), ...);
-          result += ")";
-          return result;
-        },
-        args);
-    return name;
+
+    return apply_args_to_name(name, args);
   }
 
   template <typename... Ts>
   static TC bind(Test const* group, std::tuple<Ts...> args) {
-    return {group, std::bind_front(run_one<std::tuple<Ts...>>, args), get_name(args)};
+    constexpr auto ann = _testing_impl::Annotations(Def);
+    if constexpr (!ann.name.empty()) {
+      constexpr auto name = ann.name;
+      return {group,
+              std::bind_front(run_one<std::tuple<Ts...>>, args),
+              apply_args_to_name(std::string(name), args)};
+    } else {
+      return {group, std::bind_front(run_one<std::tuple<Ts...>>, args), get_name(args)};
+    }
   }
 };
 
