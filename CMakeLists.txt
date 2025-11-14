@@ -28,10 +28,12 @@ target_link_libraries(rsltest_main PUBLIC rsltest)
 find_package(rsl-util REQUIRED)
 find_package(rsl-config REQUIRED)
 find_package(rsl-xml REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 target_link_libraries(rsltest PUBLIC rsl::util)
 target_link_libraries(rsltest PUBLIC rsl::config)
 target_link_libraries(rsltest_main PUBLIC rsl::xml)
+target_link_libraries(rsltest_main PUBLIC nlohmann_json::nlohmann_json)
 
 
 add_subdirectory(src)

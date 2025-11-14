@@ -42,6 +42,8 @@ class rsltestRecipe(ConanFile):
         self.requires("rsl-config/0.1", transitive_headers=False, transitive_libs=True)
         self.requires("rsl-xml/0.1", transitive_headers=False, transitive_libs=True)
 
+        self.requires("nlohmann_json/3.12.0", transitive_headers=True, transitive_libs=True)
+
     def layout(self):
         cmake_layout(self)
     
