@@ -23,7 +23,7 @@ class rsltestRecipe(ConanFile):
         "editable": [True, False]
     }
 
-    default_options = {"shared": False, "fPIC": True, "coverage": False, "examples": False, "editable": False}
+    default_options = {"shared": True, "fPIC": True, "coverage": False, "examples": False, "editable": False}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt", "src/*", "include/*", "example/*", "test/*"
@@ -37,7 +37,7 @@ class rsltestRecipe(ConanFile):
             self.options.rm_safe("fPIC")
 
     def requirements(self):
-        self.requires("libassert/dev", transitive_headers=True, transitive_libs=True)
+        self.requires("libassert/dev", transitive_headers=True, transitive_libs=True, options={"shared": True})
         self.requires("rsl-util/0.1", transitive_headers=True, transitive_libs=True)
         self.requires("rsl-config/0.1", transitive_headers=False, transitive_libs=True)
         self.requires("rsl-xml/0.1", transitive_headers=False, transitive_libs=True)
@@ -69,16 +69,47 @@ class rsltestRecipe(ConanFile):
 
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "rsl-test")
-        self.cpp_info.components["test"].set_property("cmake_target_name", "rsl::test")
-        self.cpp_info.components["test"].includedirs = ["include"]
-        self.cpp_info.components["test"].libdirs = ["lib"]
-        self.cpp_info.components["test"].requires = ["libassert::assert", "rsl-util::util"]
-        self.cpp_info.components["test"].libs = ["rsltest"]
+        
+        test = self.cpp_info.components["test"]
+        test.set_property("cmake_target_name", "rsl::test")
+        test.includedirs = ["include"]
+        test.libdirs = ["lib"]
+        test.requires = ["libassert::assert", "rsl-util::util"]
+        test.libs = ["rsltest"]
 
-        self.cpp_info.components["test_main"].set_property("cmake_target_name", "rsl::test_main")
-        self.cpp_info.components["test_main"].includedirs = ["include"]
-        self.cpp_info.components["test_main"].libdirs = ["lib"]
-        self.cpp_info.components["test_main"].requires = ["test", "rsl-config::config", "rsl-xml::xml"]
-        self.cpp_info.components["test_main"].libs = ["rsltest_main"]
+        test_main = self.cpp_info.components["test_main"]
+        test_main.set_property("cmake_target_name", "rsl::test_main")
+        test_main.includedirs = ["include"]
+        test_main.libdirs = ["lib"]
+        test_main.requires = ["test", "rsl-config::config", "rsl-xml::xml"]
+        test_main.libs = ["rsltest_main"]
+
+        if str(self.settings.compiler) == "clang":
+            test_cov = self.cpp_info.components["test_cov"]
+            test_cov.set_property("cmake_target_name", "rsl::test_cov")
+            test_cov.libs = []
+            test_cov.sources = ["ext/coverage_hooks.cpp"]
+            test_cov.cxxflags = ["-fsanitize-coverage=pc-table,trace-pc-guard"]
+            test_cov.sharedlinkflags = ["-fsanitize-coverage=pc-table,trace-pc-guard"]
+            test_cov.exelinkflags = ["-fsanitize-coverage=pc-table,trace-pc-guard"]
+            test_cov.requires = []
+
+            
+            test_cov_flags = self.cpp_info.components["test_cov_flags"]
+            test_cov_flags.set_property("cmake_target_name", "rsl::test_cov_flags")
+            test_cov_flags.cxxflags = ["-fsanitize-coverage=pc-table,trace-pc-guard"]
+            test_cov_flags.sharedlinkflags = ["-fsanitize-coverage=pc-table,trace-pc-guard"]
+            test_cov_flags.exelinkflags = ["-fsanitize-coverage=pc-table,trace-pc-guard"]
+
+            test_cov_hooks = self.cpp_info.components["test_cov_hooks"]
+            test_cov_hooks.set_property("cmake_target_name", "rsl::test_cov_hooks")
+            test_cov_hooks.sources = ["ext/coverage_hooks.cpp"]
+
+            # test_cov = self.cpp_info.components["test_cov"]
+            # test_cov.set_property("cmake_target_name", "rsl::test_cov")
+            # test_cov.requires = ["test_cov_flags", "test_cov_hooks"]
+
+
+
 
 

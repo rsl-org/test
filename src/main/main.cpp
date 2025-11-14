@@ -128,7 +128,9 @@ public:
   }
 };
 
+#include <rsl/coverage/hooks.hpp>
 int main(int argc, char** argv) {
+  std::println(" {}", _rsl_test_run_with_coverage == nullptr);
   auto config = TestConfig();
   config.parse_args(argc, argv);
   config.apply_filter();

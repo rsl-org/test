@@ -1,6 +1,14 @@
 #include <rsl/test>
+#include <cstdlib>
+
 
 namespace {
-[[= rsl::test]] void always_passes() {}
+bool foo() {
+  return false;
+}
+
+[[= rsl::test]] void always_passes() {
+  ASSERT(!foo());
+}
 }  // namespace
 

@@ -16,7 +16,7 @@
 #include <cpptrace/utils.hpp>
 
 #include "capture.hpp"
-#include "coverage/coverage.hpp"
+#include <rsl/coverage/hooks.hpp>
 
 namespace {
 void cleanup_frames(cpptrace::stacktrace& trace, std::string_view test_name) {
@@ -29,6 +29,7 @@ void cleanup_frames(cpptrace::stacktrace& trace, std::string_view test_name) {
   }
   trace.frames = frames;
 }
+}  // namespace
 
 void failure_handler(libassert::assertion_info const& info) {
   // libassert::enable_virtual_terminal_processing_if_needed();  // for terminal colors on windows
@@ -66,7 +67,7 @@ void print_tests(rsl::testing::TestNamespace const& current, std::size_t indent 
     }
   }
 }
-}  // namespace
+
 
 namespace rsl::testing {
 void Reporter::list_tests(TestNamespace const& tests) {

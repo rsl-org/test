@@ -1,10 +1,22 @@
-#include <functional>
-#include <print>
+#include <rsl/coverage/hooks.hpp>
 
-#include "hooks.hpp"
-#include "coverage.hpp"
+#include <unordered_map>
+#include <cstring>
+
 namespace rsl::coverage {
 namespace {
+void enable() {
+  if (should_track != nullptr) {
+    *should_track = 1;
+  }
+}
+
+void disable() {
+  if (should_track != nullptr) {
+    *should_track = 0;
+  }
+}
+
 void reset_counters() {
   if (guard_count == 0 || counters == nullptr) {
     return;
@@ -22,21 +34,15 @@ auto filter_traces() {
       reached[pc_table[idx].pc] = counters[idx];
     }
   }
-  std::vector<uintptr_t> snapshot = auto{pc_tracker()};
-  for (auto pc : snapshot) {
-    reached[pc]++;
-  }
   return reached;
 }
 
 }  // namespace
-}  // namespace rsl::coverage
 
-extern "C" __attribute__((no_sanitize("coverage"))) void _rsl_test_run_with_coverage(
-    void (*fnc)(void const*),
-    void const* test,
-    rsl::coverage::CoverageReport** output,
-    std::size_t* output_size) {
+void run(void (*fnc)(void const*),
+         void const* test,
+         rsl::coverage::CoverageReport** output,
+         std::size_t* output_size) {
   //! this function is not thread safe
   //? to avoid atomics it is assumed that we're in single threaded context here
 
@@ -45,22 +51,26 @@ extern "C" __attribute__((no_sanitize("coverage"))) void _rsl_test_run_with_cove
   using namespace rsl::coverage;
 
   auto finalize = [&] {
-    __sancov_should_track = 0;
-    auto reached          = filter_traces();
+    disable();
+    auto reached = filter_traces();
     // set output
-    *output = (CoverageReport*)malloc(sizeof(CoverageReport) * reached.size());
-
-    std::size_t idx = 0;
-    for (auto const& [pc, count] : reached) {
-      (*output)[idx] = {pc, count};
-      ++idx;
+    if (!reached.empty()) {
+      *output = (CoverageReport*)malloc(sizeof(CoverageReport) * reached.size());
+  
+      std::size_t idx = 0;
+      for (auto const& [pc, count] : reached) {
+        (*output)[idx] = {pc, count};
+        ++idx;
+      }
+    } else {
+      *output = nullptr;
     }
 
     *output_size = reached.size();
   };
 
   reset_counters();
-  __sancov_should_track = 1;
+  enable();
   try {
     fnc(test);
   } catch (...) {
@@ -69,3 +79,4 @@ extern "C" __attribute__((no_sanitize("coverage"))) void _rsl_test_run_with_cove
   }
   finalize();
 }
+}  // namespace rsl::coverage

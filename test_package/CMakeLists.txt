@@ -5,14 +5,11 @@ project(PackageTest CXX)
 add_executable(example src/example.cpp)
 
 find_package(rsl-test CONFIG REQUIRED)
-target_link_libraries(example PUBLIC rsl::test rsl::test_main)
+target_link_libraries(example PRIVATE rsl::test rsl::test_main rsl::test_cov)
 
 target_compile_options(example PRIVATE 
   "-stdlib=libc++"
-  "-freflection"
-  "-fannotation-attributes"
-  "-fparameter-reflection"
-  "-fexpansion-statements"
+  "-freflection-latest"
   "-Wno-c++26-extensions"
   # "-fconstexpr-steps=10000000" # required to scan the global namespace
 )

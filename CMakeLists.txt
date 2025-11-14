@@ -7,17 +7,14 @@ set(CMAKE_CXX_STANDARD 26)
 project(rsltest CXX)
 add_library(rsltest SHARED)
 add_library(rsltest_main SHARED)
-add_library(rsltest_cov)
+
 
 set_target_properties(rsltest PROPERTIES OUTPUT_NAME rsltest)
 target_compile_options(rsltest PUBLIC 
   "-freflection-latest"
   # "-ftime-trace"
   # "-fconstexpr-steps=10000000" # required to scan the global namespace
-)
-
-target_compile_options(rsltest_cov PUBLIC 
-  "-freflection-latest"
+  "-ftemplate-backtrace-limit=0"
 )
 
 target_include_directories(rsltest PUBLIC 
@@ -55,15 +52,14 @@ if (BUILD_TESTING)
   # add_test(NAME rsltest_test COMMAND rsltest_example)
 endif()
   
+add_subdirectory(ext)
+
+install(TARGETS rsltest_main)
+install(TARGETS rsltest)
+install(DIRECTORY include/ DESTINATION include)
 if (BUILD_EXAMPLES)
   add_executable(example_test)
   add_subdirectory(example)
   target_link_libraries(example_test PRIVATE rsltest)
   target_link_libraries(example_test PRIVATE rsltest_main)
-  target_link_libraries(example_test PRIVATE rsltest_cov)
 endif()
-  
-install(TARGETS rsltest_cov)
-install(TARGETS rsltest_main)
-install(TARGETS rsltest)
-install(DIRECTORY include/ DESTINATION include)

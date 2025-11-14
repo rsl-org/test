@@ -1,8 +1,5 @@
 #pragma once
-#include <vector>
-
 #include <rsl/testing/assert.hpp>
-
 #include <rsl/testing/annotations.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/util.hpp>
