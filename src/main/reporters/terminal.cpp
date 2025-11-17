@@ -20,13 +20,13 @@ public:
     const char* const reset = must_colorize ? "\033[0m" : "";
 
     if (result.outcome == TestOutcome::PASS) {
-      std::print("[{}       OK {}] {} ({:.3f} ms)\n",
+      std::print("[{}      OK {}] {} ({:.3f} ms)\n",
                  color[0],
                  reset,
                  result.name,
                  result.duration_ms);
-    } else {
-      std::print("[{}   FAILED {}] {} ({:.3f} ms)\n",
+    } else if (result.outcome == TestOutcome::FAIL) {
+      std::print("[{}  FAILED {}] {} ({:.3f} ms)\n",
                  color[1],
                  reset,
                  result.name,
@@ -34,10 +34,16 @@ public:
       std::print("{}ERROR{}: {}\n", color[1], reset, result.failure->message);
       std::print("==== {}stdout{} ====\n{}\n", color[1], reset, result.stdout);
       std::print("==== {}stderr{} ====\n{}\n", color[1], reset, result.stderr);
+    } else {
+      std::print("[ SKIPPED ] {} ({:.3f} ms)\n",
+                 result.name,
+                 result.duration_ms);
     }
+
     for (auto const& [file, coverage] : result.coverage) {
       std::println("Reached {} lines in file {}", coverage.size(), file);
     }
+    
     run_outcomes.push_back(result.outcome);
     for (auto const& assertion : result.assertions) {
       assertion_outcomes.push_back(assertion.success ? TestOutcome::PASS : TestOutcome::FAIL);

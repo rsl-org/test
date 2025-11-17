@@ -43,12 +43,15 @@ option(ENABLE_COVERAGE "Enable coverage instrumentation" OFF)
 
 if (BUILD_TESTING)
   message(STATUS "Building unit tests")
-  
-  add_executable(rsltest_test)
-  add_subdirectory(test)
+  include(${CMAKE_SOURCE_DIR}/cmake/rsl-test.cmake)
   # target_compile_definitions(rsltest_test PRIVATE RSL_TEST_NAMESPACE=testing)
-  target_link_libraries(rsltest_test PRIVATE rsltest)
-  target_link_libraries(rsltest_test PRIVATE rsltest_main)
+  add_library(test_dummy test/dummy.cpp)
+  target_enable_tests(test_dummy 
+    NAMESPACE testing
+    SOURCES test/ example/
+    # PREFIX test_
+    # PREFIX_REQUIRED
+  )
   
   # enable_testing()
   # add_test(NAME rsltest_test COMMAND rsltest_example)
