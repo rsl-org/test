@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <print>
+#include <filesystem>
 
 #include <rsl/source_location>
 #include <rsl/testing/assert.hpp>
@@ -13,11 +13,6 @@ namespace _testing_impl {
 std::set<TestDef>& registry() {
   static std::set<TestDef> data;
   return data;
-}
-
-AssertionTracker& assertion_counter() {
-  static AssertionTracker counter{};
-  return counter;
 }
 }  // namespace _testing_impl
 
@@ -79,6 +74,22 @@ void TestNamespace::insert(Test const& test, std::size_t i) {
   it->insert(test, i + 1);
 }
 
+void TestNamespace::remove_by_path(std::string_view path) {
+  auto matches_module_path = [&](Test const& test) {
+    return std::filesystem::path(test.module_path) == std::filesystem::path(path);
+  };
+
+  auto is_empty_namespace = [](TestNamespace const& ns) {
+    return ns.is_empty();
+  };
+  
+  for (auto& ns : children) {
+    ns.remove_by_path(path);
+  }
+  std::erase_if(children, is_empty_namespace);
+  std::erase_if(tests, matches_module_path);
+}
+
 std::size_t TestNamespace::count() const {
   std::size_t total = tests.size();
   for (auto const& ns : children) {
@@ -115,7 +126,7 @@ void TestNamespace::filter(std::span<std::string const> parts) {
 TestRoot get_tests() {
   TestRoot root;
   for (auto test_def : rsl::testing::_testing_impl::registry()) {
-    auto test = test_def();
+    auto test = test_def({});
     root.insert(test);
   }
   return root;

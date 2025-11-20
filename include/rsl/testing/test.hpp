@@ -40,6 +40,7 @@ class Test {
 
 public:
   std::source_location sloc;
+  std::string module_path;
   std::string_view name;                   // raw name
   std::string_view preferred_name;         // from annotations
   std::span<char const* const> full_name;  // fully qualified name
@@ -71,7 +72,7 @@ public:
   std::vector<TestCase> get_tests() const { return (this->*get_tests_impl)(); }
 };
 
-using TestDef = Test (*)();
+using TestDef = Test (*)(std::string const&);
 
 struct Reporter;
 struct TestNamespace {
@@ -113,7 +114,8 @@ struct TestNamespace {
   [[nodiscard]] bool is_empty() const { return tests.empty() && children.empty(); }
   [[nodiscard]] iterator begin() const { return iterator{*this}; }
   [[nodiscard]] static iterator end() { return {}; }
-  void insert(const Test& test, size_t i = 0);
+  void insert(Test const& test, size_t i = 0);
+  void remove_by_path(std::string_view path);
 
   [[nodiscard]] std::size_t count() const;
   bool run(Reporter* reporter);
@@ -122,7 +124,7 @@ struct TestNamespace {
 };
 
 struct TestRoot : TestNamespace {
-  bool run(Reporter* reporter);
+  bool run(Reporter* reporter, bool summarize = true);
 };
 
 TestRoot get_tests();

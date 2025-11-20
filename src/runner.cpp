@@ -18,6 +18,22 @@
 #include "capture.hpp"
 #include <rsl/coverage/hooks.hpp>
 
+namespace rsl::testing::_testing_impl {
+struct AssertionTracker {
+  std::vector<rsl::testing::AssertionInfo> assertions;
+  std::string test_name;
+};
+
+AssertionTracker& assertion_counter() {
+  static AssertionTracker counter{};
+  return counter;
+}
+
+void track_assertion(AssertionInfo info) {
+  assertion_counter().assertions.emplace_back(info);
+}
+}  // namespace rsl::testing::_testing_impl
+
 namespace {
 void cleanup_frames(cpptrace::stacktrace& trace, std::string_view test_name) {
   std::vector<cpptrace::stacktrace_frame> frames;
@@ -68,20 +84,21 @@ void print_tests(rsl::testing::TestNamespace const& current, std::size_t indent 
   }
 }
 
-
 namespace rsl::testing {
 void Reporter::list_tests(TestNamespace const& tests) {
   print_tests(tests);
 }
 
-bool TestRoot::run(Reporter* reporter) {
+bool TestRoot::run(Reporter* reporter, bool summarize) {
   libassert::set_failure_handler(failure_handler);
-  std::println("failure handler set");
+  // std::println("failure handler set");
   reporter->before_run(*this);
   bool status = TestNamespace::run(reporter);
   libassert::set_failure_handler(libassert::default_failure_handler);
   // TODO after_run
-  reporter->after_run();
+  if (summarize) {
+    reporter->after_run();
+  }
   return status;
 }
 
@@ -105,7 +122,7 @@ bool TestNamespace::run(Reporter* reporter) {
         tracker.test_name  = join_str(test.full_name, "::");
 
         reporter->before_test(test_run);
-        auto result = test_run.run();
+        auto result       = test_run.run();
         result.assertions = tracker.assertions;
 
         reporter->after_test(result);
@@ -172,7 +189,7 @@ Result TestCase::run() const {
       // rsltest_cov was linked in -> run with coverage
       rsl::coverage::CoverageReport* reports = nullptr;
       std::size_t report_count               = 0;
-      auto finalize = [&] {
+      auto finalize                          = [&] {
         ret.coverage = filter_coverage(reports, report_count);
         free(reports);
       };
@@ -182,7 +199,7 @@ Result TestCase::run() const {
                                     &reports,
                                     &report_count);
         finalize();
-      } catch (...) { 
+      } catch (...) {
         finalize();
         throw;
       }

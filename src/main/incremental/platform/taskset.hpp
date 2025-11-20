@@ -18,7 +18,7 @@ struct ProgramInvocation {
 
 ProcessResult run_on_cpu(int cpu, std::string const& program, std::span<std::string const> argv);
 inline ProcessResult run_on_cpu(int cpu, ProgramInvocation const& invocation){
-  std::println("running {} {}", invocation.program, invocation.arguments);
+  // std::println("running {} {}", invocation.program, invocation.arguments);
   return run_on_cpu(cpu, invocation.program, invocation.arguments);
 }
 }

@@ -254,10 +254,10 @@ function(target_enable_tests _TEST_ARG_TARGET)
     \"configurations\": {
       \"default\": { 
         \"compiler_path\": \"${_compiler}\",
-        \"${_lang}\": {
-          \"standard\": ${_std},
-          \"extensions\": ${_std_ext}
-        }
+        \"mode\": \"${_lang}\",
+        \"standard\": ${_std},
+        \"gnu_extensions\": ${_std_ext},
+        \"options\": {}
       }
     }
   }")

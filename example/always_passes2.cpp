@@ -15,7 +15,7 @@ auto zoinks(bool zoinks) {
   return x;
 }
 
-[[= rsl::test]] void always_passes() {
+void test_always_passes() {
   std::cout << "foo\n";
   std::cerr << "bar\n";
   zoinks(false);

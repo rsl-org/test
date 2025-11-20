@@ -1,54 +1,25 @@
+#include "../watch.hpp"
+
 #include <sys/inotify.h>
 #include <unistd.h>
 
-#include <array>
 #include <cerrno>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <format>
 #include <print>
+#include <ratio>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+namespace {
 constexpr std::uint32_t watch_mask = IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM |
                                      IN_MOVED_TO | IN_ATTRIB | IN_DELETE_SELF | IN_MOVE_SELF;
-
-struct Inotify {
-  int fd                  = -1;
-  Inotify(Inotify const&) = delete;
-  Inotify(Inotify&&)      = default;
-
-  Inotify& operator=(Inotify const&) = delete;
-  Inotify& operator=(Inotify&&)      = delete;
-
-  Inotify() : fd(::inotify_init1(IN_NONBLOCK)) {
-    if (fd < 0) {
-      throw std::runtime_error(std::format("inotify_init1: {}", std::strerror(errno)));
-    }
-  }
-
-  ~Inotify() {
-    if (fd >= 0) {
-      ::close(fd);
-    }
-  }
-
-  [[nodiscard]] int add_watch(const std::filesystem::path& p) const {
-    int wd = ::inotify_add_watch(fd, p.c_str(), watch_mask);
-    if (wd < 0) {
-      throw std::runtime_error(
-          std::format("inotify_add_watch({}): {}", p.string(), std::strerror(errno)));
-    }
-    return wd;
-  }
-
-  void rm_watch(int wd) {
-    inotify_rm_watch(fd, wd);
-  }
-};
 
 struct InotifyEvent {
   int wd;
@@ -137,77 +108,122 @@ enum FileEvent {
   Q_OVERFLOW = 0x00004000, /* Event queued overflowed.  */
   IGNORED    = 0x00008000, /* File was ignored.  */
 };
+}  // namespace
 
-struct Watcher {
-  std::unordered_map<int, std::filesystem::path> watchers;
-  Inotify inotify;
+namespace rsl::testing::_impl_main {
+struct WatcherImpl {
+  int fd = -1;
+  std::unordered_map<std::filesystem::path, std::chrono::steady_clock::time_point> last_modified;
 
-  void add_directory(std::filesystem::path const& dir, bool recurse = true) {
-    if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
-      // throw std::runtime_error(std::format("not a directory: {}", dir.string()));
-      return;
-    }
+  WatcherImpl(WatcherImpl const&) = delete;
+  WatcherImpl(WatcherImpl&&)      = default;
 
-    int top_wd = inotify.add_watch(dir);
-    watchers.emplace(top_wd, dir);
-    if (not recurse) {
-      return;
-    }
+  WatcherImpl& operator=(WatcherImpl const&) = delete;
+  WatcherImpl& operator=(WatcherImpl&&)      = delete;
 
-    for (auto const& ent : std::filesystem::recursive_directory_iterator(dir)) {
-      if (ent.is_directory()) {
-        try {
-          int wd = inotify.add_watch(ent.path());
-          watchers.emplace(wd, ent.path());
-        } catch (const std::exception& ex) {
-          // Non-fatal: skip directories we can't watch (permission, etc.)
-          std::println("warning: cannot watch {}: {}", ent.path().string(), ex.what());
-        }
-      }
+  WatcherImpl() : fd(::inotify_init1(IN_NONBLOCK)) {
+    if (fd < 0) {
+      throw std::runtime_error(std::format("inotify_init1: {}", std::strerror(errno)));
     }
   }
 
-  void watch(auto&& fnc) {
-    std::vector<char> pending;
-    pending.reserve(8192);
-    std::array<char, 8192> tmpbuf;
+  ~WatcherImpl() {
+    if (fd >= 0) {
+      ::close(fd);
+    }
+  }
 
-    while (true) {
-      ssize_t n = ::read(inotify.fd, tmpbuf.data(), static_cast<int>(tmpbuf.size()));
-      if (n < 0) {
-        if (errno == EAGAIN) {
-          ::usleep(100000);
-          continue;
-        }
-        std::println("read error: {}", std::strerror(errno));
-        break;
+  [[nodiscard]] int add_watch(const std::filesystem::path& p) const {
+    int wd = ::inotify_add_watch(fd, p.c_str(), watch_mask);
+    if (wd < 0) {
+      throw std::runtime_error(
+          std::format("inotify_add_watch({}): {}", p.string(), std::strerror(errno)));
+    }
+    return wd;
+  }
+
+  void rm_watch(int wd) { inotify_rm_watch(fd, wd); }
+};
+
+Watcher::Watcher() : impl(new WatcherImpl()) {}
+Watcher::~Watcher() noexcept {
+  delete impl;
+}
+uintptr_t Watcher::get_handle() const {
+  return impl->fd;
+}
+
+void Watcher::on_readable(std::span<char const> data) {
+  constexpr auto debounce_threshold = std::chrono::milliseconds(100);
+
+  pending.append_range(data);
+  auto events = try_decode_events(pending);
+  for (auto const& ev : events) {
+    auto it                    = watchers.find(ev.wd);
+    std::filesystem::path dir  = (it != watchers.end()) ? it->second : std::filesystem::path{};
+    std::filesystem::path full = ev.name.empty() ? dir : dir / ev.name;
+    std::println("dispatching {} {} ", full.string(), ev.mask);
+
+    // fnc(full, FileEvent(ev.mask));
+
+    if ((ev.mask & FileEvent::CREATE) && (ev.mask & IN_ISDIR)) {
+      add_watch(full, true);
+    }
+
+    if ((ev.mask & IN_DELETE_SELF) || (ev.mask & IN_MOVE_SELF)) {
+      // watched directory was deleted or moved away, remove mapping
+      if (it != watchers.end()) {
+        impl->rm_watch(it->first);
+        watchers.erase(it);
       }
-      if (n == 0) {
+    }
+
+    if ((ev.mask & FileEvent::MODIFY)) {
+      auto now = std::chrono::steady_clock::now();
+      if (auto it = impl->last_modified.find(dir);
+          it != impl->last_modified.end() && now - it->second < debounce_threshold) {
         continue;
       }
-      pending.insert(pending.end(), tmpbuf.data(), tmpbuf.data() + static_cast<size_t>(n));
+      impl->last_modified[dir] = now;
+      std::println("modified: {}", full.string());
+    }
+  }
+}
 
-      // decode complete events; any partial event bytes remain in pending
-      auto events = try_decode_events(pending);
+void Watcher::add_watch(std::filesystem::path const& dir, bool recurse) {
+  if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
+    // throw std::runtime_error(std::format("not a directory: {}", dir.string()));
+    return;
+  }
 
-      for (auto const& ev : events) {
-        auto it       = watchers.find(ev.wd);
-        std::filesystem::path dir  = (it != watchers.end()) ? it->second : std::filesystem::path{};
-        std::filesystem::path full = ev.name.empty() ? dir : dir / ev.name;
-        fnc(full, FileEvent(ev.mask));
+  for (auto const& [_, path] : watchers) {
+    if (dir == path) {
+      // already watching
+      return;
+    }
+  }
 
-        if ((ev.mask & FileEvent::CREATE) && (ev.mask & IN_ISDIR)) {
-          add_directory(full, true);
-        }
+  int top_wd = impl->add_watch(dir);
+  watchers.emplace(top_wd, dir);
+  if (not recurse) {
+    return;
+  }
 
-        if ((ev.mask & IN_DELETE_SELF) || (ev.mask & IN_MOVE_SELF)) {
-          // watched directory was deleted or moved away, remove mapping
-          if (it != watchers.end()) {
-            inotify.rm_watch(it->first);
-            watchers.erase(it);
-          }
-        }
+  for (auto const& ent : std::filesystem::recursive_directory_iterator(dir)) {
+    if (ent.is_directory()) {
+      try {
+        int wd = impl->add_watch(ent.path());
+        watchers.emplace(wd, ent.path());
+      } catch (const std::exception& ex) {
+        // Non-fatal: skip directories we can't watch (permission, etc.)
+        std::println("warning: cannot watch {}: {}", ent.path().string(), ex.what());
       }
     }
   }
-};
+}
+
+void Watcher::rm_watch(std::filesystem::path const& dir) {
+  // TODO
+}
+
+}  // namespace rsl::testing::_impl_main

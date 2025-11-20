@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <queue>
 #include <thread>
 #include <vector>
@@ -63,7 +64,6 @@ public:
   }
 
   std::vector<output_type> collect() {
-    wait();
     std::vector<output_type> output;
     {
       std::scoped_lock lock(resultMutex);
@@ -90,8 +90,11 @@ private:
         task = std::move(tasks.front());
         tasks.pop();
       }
-
+      std::println("building {}", task.out_path.string());
+      auto start_time = std::chrono::steady_clock::now();
       output_type result = {task, run_on_cpu(cpu, task.invocation)};
+      auto end_time = std::chrono::steady_clock::now();
+      std::println("{} - {}", task.out_path.string(), std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time));
       {
         std::scoped_lock lock(resultMutex);
         results.push_back(std::move(result));

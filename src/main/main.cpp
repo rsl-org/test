@@ -1,104 +1,88 @@
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 
 #include <nlohmann/json.hpp>
 #include <dlfcn.h>
 
-#include "compile_pool.hpp"
-#include "config_parser.hpp"
+#include "incremental.hpp"
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
-#include "platform/library.hpp"
-
-#include "platform/posix/watch.hpp"
+#include "incremental/platform/stdin.hpp"
 #include "rsl/testing/output.hpp"
 
-struct TestSet {
-  void* handle;
-  std::set<rsl::testing::TestDef> tests;
-};
+#include <sys/epoll.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+void make_nonblocking(int fd) {
+  int flags = fcntl(fd, F_GETFL, 0);
+  fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
 
 int main() {
   using namespace rsl::testing::_impl_main;
-  constexpr bool incremental = false;
+  constexpr bool incremental = true;
 
   const auto executable_path = std::filesystem::canonical("/proc/self/exe").parent_path();
   const std::filesystem::path config_path = executable_path / "test-runner.json";
 
-  ConfigParser runner(config_path);
-  auto test_tus = runner.expand();  // TODO split config and test discovery
+  auto runner      = IncrementalRunner(config_path);
+  auto test_inputs = runner.discover_tests();
 
-  CompilePool pool{};
-  for (auto&& tu : test_tus) {
-    pool.submit(tu);
-  }
-
-  std::unordered_map<std::filesystem::path, TestSet> test_sets;
-
-  for (auto&& [tu, result] : pool.collect()) {
-    if (result.exit_code != 0) {
-      std::println("ERROR!");
-      continue;
-    }
-
-    if (not rsl::testing::_testing_impl::registry().empty()) {
-      std::println("test registry not empty");
-      rsl::testing::_testing_impl::registry().clear();
-    }
-    // check if we have the key already, make sure old one is unloaded
-
-    void* handle = load_library(tu.out_path.string());
-    if (handle != nullptr) {
-      test_sets[tu.out_path] = {handle, rsl::testing::_testing_impl::registry()};
-    }
-    rsl::testing::_testing_impl::registry().clear();
-  }
-
-  if (not rsl::testing::_testing_impl::registry().empty()) {
-    std::println("test registry not empty");
-  }
+  runner.recompile(runner.expand_tests(test_inputs));
 
   rsl::testing::TestRoot root;
-  for (auto&& [path, test_set] : test_sets) {
-    std::println("{} -> {}", path.string(), test_set.tests.size());
-    for (auto test : test_set.tests) {
-      root.insert(test());
+
+  auto update_tree = [&](auto file_path) {
+    // remove updated tests from tree
+    // for (auto&& [path, _] : runner.test_sets) {
+    //   root.remove_by_path(path.string());
+    // }
+
+    // rebuild root
+    root = {};
+    // insert
+    rsl::testing::TestRoot tests;
+    for (auto&& [path, test_set] : runner.test_sets) {
+      // std::println("{} -> {}", path.string(), test_set.tests.size());
+      for (auto test_def : test_set.tests) {
+        auto test = test_def(path);
+        // root.insert(test);
+        // if (file_path == path) {
+        tests.insert(test);
+        // }
+      }
     }
-  }
+    return tests;
+  };
+  update_tree("");
 
   std::unique_ptr<rsl::testing::Reporter> selected_reporter;
   selected_reporter = rsl::testing::Reporter::make("plain");
   root.run(selected_reporter.get());
 
-  for (auto& [path, test_set] : test_sets) {
+  for (auto& [path, test_set] : runner.test_sets) {
     dlclose(test_set.handle);
     test_set.tests = {};
   }
 
   if (incremental) {
     Watcher watch{};
-    const auto test_paths = runner.config_.at("project").at("test_path");
-    for (auto path : test_paths) {
-      watch.add_directory(path);
+    for (auto const& path : runner.config.project.test_path) {
+      watch.add_watch(path);
     }
-    watch.watch([&](auto path, FileEvent event) {
-      if ((event & FileEvent::MODIFY) == FileEvent::MODIFY) {
-        // compile TU
 
-        if (auto it = test_sets.find(path); it != test_sets.end()) {
-          TestSet& set = it->second;
-          
-          // clean up old test
-          if (set.handle != nullptr) {
-            dlclose(set.handle);
-            set.handle = nullptr;
-          }
-          set.tests = {};
-        }
-
-        // load TU
-      }
-    });
+    // auto watch_fnc = [&](auto path, FileEvent event) {
+    //   if ((event & FileEvent::MODIFY) == FileEvent::MODIFY) {
+    //     // compile TU
+    //     runner.recompile(runner.expand_tests({path}));
+    //     // load TU
+    //     auto updated = update_tree(path);
+    //     // updated.run(selected_reporter.get(), false);
+    //   }
+    // };
+    TerminalCommand commands;
+    
+    auto loop = EventLoop(commands, watch);
+    loop.run();
   }
 }

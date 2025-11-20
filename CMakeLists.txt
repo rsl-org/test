@@ -47,8 +47,8 @@ if (BUILD_TESTING)
   # target_compile_definitions(rsltest_test PRIVATE RSL_TEST_NAMESPACE=testing)
   add_library(test_dummy test/dummy.cpp)
   target_enable_tests(test_dummy 
-    NAMESPACE testing
-    SOURCES test/ example/
+    NAMESPACE demo
+    SOURCES example/
     # PREFIX test_
     # PREFIX_REQUIRED
   )
@@ -62,9 +62,9 @@ add_subdirectory(ext)
 install(TARGETS rsltest_main)
 install(TARGETS rsltest)
 install(DIRECTORY include/ DESTINATION include)
-if (BUILD_EXAMPLES)
-  add_executable(example_test)
-  add_subdirectory(example)
-  target_link_libraries(example_test PRIVATE rsltest)
-  target_link_libraries(example_test PRIVATE rsltest_main)
-endif()
+# if (BUILD_EXAMPLES)
+#   add_executable(example_test)
+#   add_subdirectory(example)
+#   target_link_libraries(example_test PRIVATE rsltest)
+#   target_link_libraries(example_test PRIVATE rsltest_main)
+# endif()
