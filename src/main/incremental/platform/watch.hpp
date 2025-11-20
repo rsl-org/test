@@ -4,21 +4,30 @@
 #include <span>
 #include <unordered_map>
 #include <vector>
+
 namespace rsl::testing::_impl_main {
 
+struct IncrementalRunner;
 struct WatcherImpl;
+
 class Watcher {
   WatcherImpl* impl;
-  std::unordered_map<int, std::filesystem::path> watchers; // TODO flip
+  std::unordered_map<int, std::filesystem::path> watchers;  // TODO flip
   std::vector<char> pending;
+  IncrementalRunner* runner;
 
 public:
-  Watcher();
+  Watcher() = delete;
+  explicit Watcher(IncrementalRunner& runner);
   ~Watcher() noexcept;
 
   [[nodiscard]] uintptr_t get_handle() const;
   void on_readable(std::span<char const> data);
   void add_watch(std::filesystem::path const& dir, bool recurse = true);
   void rm_watch(std::filesystem::path const& dir);
+
+  void file_modified(std::filesystem::path const& path) {}
+
+  void file_deleted(std::filesystem::path const& path) {}
 };
 }  // namespace rsl::testing::_impl_main

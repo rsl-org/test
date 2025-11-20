@@ -3,20 +3,12 @@
 #include <nlohmann/json.hpp>
 #include <dlfcn.h>
 
-#include "incremental.hpp"
+#include "incremental/incremental.hpp"
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
 #include "incremental/platform/stdin.hpp"
 #include "rsl/testing/output.hpp"
 
-#include <sys/epoll.h>
-#include <unistd.h>
-#include <fcntl.h>
-
-void make_nonblocking(int fd) {
-  int flags = fcntl(fd, F_GETFL, 0);
-  fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-}
 
 int main() {
   using namespace rsl::testing::_impl_main;
@@ -66,7 +58,7 @@ int main() {
   }
 
   if (incremental) {
-    Watcher watch{};
+    Watcher watch{runner};
     for (auto const& path : runner.config.project.test_path) {
       watch.add_watch(path);
     }
@@ -80,7 +72,7 @@ int main() {
     //     // updated.run(selected_reporter.get(), false);
     //   }
     // };
-    TerminalCommand commands;
+    TerminalCommand commands{runner};
     
     auto loop = EventLoop(commands, watch);
     loop.run();

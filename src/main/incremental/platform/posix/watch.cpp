@@ -16,6 +16,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "incremental/incremental.hpp"
 
 namespace {
 constexpr std::uint32_t watch_mask = IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM |
@@ -145,7 +146,7 @@ struct WatcherImpl {
   void rm_watch(int wd) { inotify_rm_watch(fd, wd); }
 };
 
-Watcher::Watcher() : impl(new WatcherImpl()) {}
+Watcher::Watcher(IncrementalRunner& runner) : impl(new WatcherImpl()), runner(&runner) {}
 Watcher::~Watcher() noexcept {
   delete impl;
 }

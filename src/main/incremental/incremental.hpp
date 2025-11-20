@@ -1,11 +1,11 @@
 #pragma once
 #include <ranges>
 
-#include "incremental/compile_pool.hpp"
-#include "incremental/config_parser.hpp"
-#include "incremental/platform/library.hpp"
-#include "incremental/platform/watch.hpp"
-#include "incremental/platform/event_loop.hpp"
+#include "compile_pool.hpp"
+#include "config_parser.hpp"
+#include "platform/library.hpp"
+#include "platform/watch.hpp"
+#include "platform/event_loop.hpp"
 
 #include <rsl/testing/_testing_impl/discovery.hpp>
 

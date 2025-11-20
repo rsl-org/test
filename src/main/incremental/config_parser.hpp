@@ -29,7 +29,7 @@ struct Project {
   std::string namespace_;  // TODO rename via annotation
 };
 
-void to_json(nlohmann::json& doc, Project const& p) {
+inline void to_json(nlohmann::json& doc, Project const& p) {
   doc = {
       {   "test_path",    p.test_path},
       {  "build_path",   p.build_path},
@@ -37,7 +37,7 @@ void to_json(nlohmann::json& doc, Project const& p) {
       {   "namespace",   p.namespace_}
   };
 }
-void from_json(nlohmann::json const& doc, Project& p) {
+inline void from_json(nlohmann::json const& doc, Project& p) {
   doc.at("test_path").get_to(p.test_path);
   p.test_path = filter_empty(p.test_path);
   doc.at("build_path").get_to(p.build_path);
@@ -52,7 +52,7 @@ struct Options {
   std::vector<std::string> link_options;
   std::vector<std::filesystem::path> link_libraries;
 };
-void to_json(nlohmann::json& doc, Options const& p) {
+inline void to_json(nlohmann::json& doc, Options const& p) {
   doc = {
       {       "include_dirs",        p.include_dirs},
       {    "compile_options",     p.compile_options},
@@ -61,7 +61,7 @@ void to_json(nlohmann::json& doc, Options const& p) {
       {     "link_libraries",      p.link_libraries}
   };
 }
-void from_json(nlohmann::json const& doc, Options& p) {
+inline void from_json(nlohmann::json const& doc, Options& p) {
   doc.at("include_dirs").get_to(p.include_dirs);
   p.include_dirs = filter_empty(p.include_dirs);
   doc.at("compile_options").get_to(p.compile_options);
@@ -80,7 +80,7 @@ struct Configuration {
   unsigned standard                   = 26;
   bool gnu_extensions                 = false;
 };
-void to_json(nlohmann::json& doc, Configuration const& p) {
+inline void to_json(nlohmann::json& doc, Configuration const& p) {
   doc = {
       { "compiler_path",  p.compiler_path},
       {          "mode",           p.mode},
@@ -88,7 +88,7 @@ void to_json(nlohmann::json& doc, Configuration const& p) {
       {"gnu_extensions", p.gnu_extensions}
   };
 }
-void from_json(nlohmann::json const& doc, Configuration& p) {
+inline void from_json(nlohmann::json const& doc, Configuration& p) {
   doc.at("compiler_path").get_to(p.compiler_path);
   doc.at("mode").get_to(p.mode);
   doc.at("standard").get_to(p.standard);
@@ -102,7 +102,7 @@ struct RunnerConfig {
   std::unordered_map<std::string, Configuration> configurations;
 };
 
-void to_json(nlohmann::json& doc, RunnerConfig const& p) {
+inline void to_json(nlohmann::json& doc, RunnerConfig const& p) {
   doc = {
       {        "target",         p.target},
       {       "project",        p.project},
@@ -111,7 +111,7 @@ void to_json(nlohmann::json& doc, RunnerConfig const& p) {
   };
 }
 
-void from_json(nlohmann::json const& doc, RunnerConfig& p) {
+inline void from_json(nlohmann::json const& doc, RunnerConfig& p) {
   doc.at("target").get_to(p.target);
   doc.at("project").get_to(p.project);
   doc.at("options").get_to(p.options);
