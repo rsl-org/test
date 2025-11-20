@@ -5,7 +5,6 @@
 #include "config_parser.hpp"
 #include "platform/library.hpp"
 #include "platform/watch.hpp"
-#include "platform/event_loop.hpp"
 
 #include <rsl/testing/_testing_impl/discovery.hpp>
 

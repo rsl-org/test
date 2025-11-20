@@ -177,16 +177,20 @@ void Watcher::on_readable(std::span<char const> data) {
         impl->rm_watch(it->first);
         watchers.erase(it);
       }
+      file_deleted(full);
     }
 
     if ((ev.mask & FileEvent::MODIFY)) {
       auto now = std::chrono::steady_clock::now();
       if (auto it = impl->last_modified.find(dir);
           it != impl->last_modified.end() && now - it->second < debounce_threshold) {
+        // debounce
         continue;
       }
       impl->last_modified[dir] = now;
+
       std::println("modified: {}", full.string());
+      file_modified(full);
     }
   }
 }
@@ -203,6 +207,8 @@ void Watcher::add_watch(std::filesystem::path const& dir, bool recurse) {
       return;
     }
   }
+
+  std::println("watching {} for changes", dir.string());
 
   int top_wd = impl->add_watch(dir);
   watchers.emplace(top_wd, dir);

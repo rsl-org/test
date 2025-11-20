@@ -1,14 +1,14 @@
 #include <filesystem>
 
 #include <nlohmann/json.hpp>
-#include <dlfcn.h>
+
+#include <rsl/testing/_testing_impl/discovery.hpp>
+#include <rsl/testing/output.hpp>
 
 #include "incremental/incremental.hpp"
-#include <rsl/testing/_testing_impl/discovery.hpp>
-
+#include "incremental/platform/library.hpp"
 #include "incremental/platform/stdin.hpp"
-#include "rsl/testing/output.hpp"
-
+#include "incremental/platform/event_loop.hpp"
 
 int main() {
   using namespace rsl::testing::_impl_main;
@@ -53,7 +53,7 @@ int main() {
   root.run(selected_reporter.get());
 
   for (auto& [path, test_set] : runner.test_sets) {
-    dlclose(test_set.handle);
+    unload_library(test_set.handle);
     test_set.tests = {};
   }
 
@@ -72,7 +72,7 @@ int main() {
     //     // updated.run(selected_reporter.get(), false);
     //   }
     // };
-    TerminalCommand commands{runner};
+    TerminalCommand commands{runner, watch};
     
     auto loop = EventLoop(commands, watch);
     loop.run();
