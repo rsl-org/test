@@ -21,6 +21,7 @@ struct IncrementalRunner {
 
   // TODO move to config?
   static constexpr std::array allowed_extensions = {".cpp"};
+
 public:
   IncrementalRunner() = default;
   explicit IncrementalRunner(std::filesystem::path const& config_path)
@@ -28,7 +29,8 @@ public:
 
   [[nodiscard]]
   TestTU make_invocation(std::string_view config_name,
-                         std::filesystem::path const& test_path) const {
+                         std::filesystem::path const& test_path,
+                         bool dump_dependencies = false) const {
     const auto& options = config.options;
 
     const auto& configurations = config.configurations;
@@ -64,33 +66,37 @@ public:
       cmd.push_back(std::format("-D{}", d));
     }
 
-    for (auto const& lib : options.link_libraries) {
-      if (lib.is_absolute()) {
-        cmd.push_back(std::format("-L{}", lib.string()));
-      } else {
-        cmd.push_back(std::format("-l{}", lib.string()));
+    if (not dump_dependencies) {
+      for (auto const& lib : options.link_libraries) {
+        if (lib.is_absolute()) {
+          cmd.push_back(std::format("-L{}", lib.string()));
+        } else {
+          cmd.push_back(std::format("-l{}", lib.string()));
+        }
       }
-    }
 
-    // cmd.push_back(std::format("-Wl,-rpath,{}", build_path.string()));
-    // cmd.push_back(std::format("-L{}", build_path.string()));
-    cmd.emplace_back("-fPIC");
-    cmd.emplace_back("-shared");
+      // cmd.push_back(std::format("-Wl,-rpath,{}", build_path.string()));
+      // cmd.push_back(std::format("-L{}", build_path.string()));
+      cmd.emplace_back("-fPIC");
+      cmd.emplace_back("-shared");
+
+      // out file
+      cmd.emplace_back("-o");
+      cmd.push_back(out_path.string());
+    }
 
     if (auto ns = config.project.namespace_; not ns.empty()) {
       cmd.emplace_back("-DRSL_TEST_NAMESPACE=" + ns);
     }
 
-    cmd.emplace_back("-ftime-trace");
-
-    // out file
-    cmd.emplace_back("-o");
-    cmd.push_back(out_path.string());
-
     // input file
     cmd.push_back(std::string(test_path.string()));
 
-    return {compiler_path, cmd, out_path};
+    if (dump_dependencies) {
+      cmd.emplace_back("-MM");
+    }
+
+    return {compiler_path, cmd, out_path, test_path};
   }
 
   static std::vector<std::filesystem::path> discover_tests(std::filesystem::path const& root) {
@@ -117,11 +123,12 @@ public:
     return result;
   }
 
-  std::vector<TestTU> expand_tests(std::vector<std::filesystem::path> const& tests) {
+  std::vector<TestTU> expand_tests(std::vector<std::filesystem::path> const& tests,
+                                   bool dump = false) {
     std::vector<TestTU> test_tus;
     for (auto const& test : tests) {
       for (auto const& [name, _] : config.configurations) {
-        test_tus.push_back(make_invocation(name, test));
+        test_tus.push_back(make_invocation(name, test, dump));
       }
     }
     return test_tus;
@@ -164,7 +171,7 @@ public:
 
   void unload(std::filesystem::path const& file) {
     if (auto it = test_sets.find(file); it != test_sets.end()) {
-      auto&[handle, tests] = it->second;
+      auto& [handle, tests] = it->second;
       if (handle != nullptr) {
         unload_library(handle);
         tests = {};

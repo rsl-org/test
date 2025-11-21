@@ -12,7 +12,7 @@ struct WatcherImpl;
 
 class Watcher {
   WatcherImpl* impl;
-  std::unordered_map<int, std::filesystem::path> watchers;  // TODO flip
+  std::unordered_map<std::filesystem::path, int> watchers;  // TODO flip
   std::vector<char> pending;
   IncrementalRunner* runner;
 
@@ -26,7 +26,9 @@ public:
   void add_watch(std::filesystem::path const& dir, bool recurse = true);
   void rm_watch(std::filesystem::path const& dir);
 
-  void file_modified(std::filesystem::path const& path) {}
+  void file_modified(std::filesystem::path const& path) {
+
+  }
 
   void file_deleted(std::filesystem::path const& path) {}
 };

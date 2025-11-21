@@ -34,8 +34,9 @@ ProcessResult run_program_on_cpu(int cpu, const char* program, char* const argv[
     close(out_pipe[1]);
     close(err_pipe[0]);
     close(err_pipe[1]);
-
-    pin_to_cpu(cpu);
+    if (cpu >= 0) {
+      pin_to_cpu(cpu);
+    }
 
     execvp(program, argv);
     perror("execvp failed");
@@ -78,6 +79,7 @@ ProcessResult run_program_on_cpu(int cpu, const char* program, char* const argv[
   return {exit_code, stdout_str, stderr_str};
 }
 }  // namespace
+
 ProcessResult run_on_cpu(int cpu, std::string const& program, std::span<std::string const> argv) {
   std::vector<char*> args;
   if (argv.size() != 0 && argv[0] != program) {

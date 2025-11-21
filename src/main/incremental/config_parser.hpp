@@ -14,6 +14,7 @@ namespace rsl::testing::_impl_main {
 struct TestTU {
   ProgramInvocation invocation;
   std::filesystem::path out_path;
+  std::filesystem::path source_path;
 };
 
 template <std::ranges::input_range R>

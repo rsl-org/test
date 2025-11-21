@@ -21,4 +21,8 @@ inline ProcessResult run_on_cpu(int cpu, ProgramInvocation const& invocation){
   // std::println("running {} {}", invocation.program, invocation.arguments);
   return run_on_cpu(cpu, invocation.program, invocation.arguments);
 }
+
+inline ProcessResult run_program(std::string const& program, std::span<std::string const> argv) {
+  return run_on_cpu(-1, program, argv);
+}
 }

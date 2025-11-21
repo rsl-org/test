@@ -11,7 +11,6 @@
 #include <filesystem>
 #include <format>
 #include <print>
-#include <ratio>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -160,12 +159,9 @@ void Watcher::on_readable(std::span<char const> data) {
   pending.append_range(data);
   auto events = try_decode_events(pending);
   for (auto const& ev : events) {
-    auto it                    = watchers.find(ev.wd);
-    std::filesystem::path dir  = (it != watchers.end()) ? it->second : std::filesystem::path{};
+    auto it = std::ranges::find_if(watchers, [&](auto&& obj) { return obj.second == ev.wd; });
+    std::filesystem::path dir  = (it != watchers.end()) ? it->first : std::filesystem::path{};
     std::filesystem::path full = ev.name.empty() ? dir : dir / ev.name;
-    std::println("dispatching {} {} ", full.string(), ev.mask);
-
-    // fnc(full, FileEvent(ev.mask));
 
     if ((ev.mask & FileEvent::CREATE) && (ev.mask & IN_ISDIR)) {
       add_watch(full, true);
@@ -174,7 +170,7 @@ void Watcher::on_readable(std::span<char const> data) {
     if ((ev.mask & IN_DELETE_SELF) || (ev.mask & IN_MOVE_SELF)) {
       // watched directory was deleted or moved away, remove mapping
       if (it != watchers.end()) {
-        impl->rm_watch(it->first);
+        impl->rm_watch(it->second);
         watchers.erase(it);
       }
       file_deleted(full);
@@ -201,17 +197,15 @@ void Watcher::add_watch(std::filesystem::path const& dir, bool recurse) {
     return;
   }
 
-  for (auto const& [_, path] : watchers) {
-    if (dir == path) {
-      // already watching
-      return;
-    }
+  if (watchers.contains(dir)) {
+    // already watching
+    return;
   }
 
   std::println("watching {} for changes", dir.string());
 
   int top_wd = impl->add_watch(dir);
-  watchers.emplace(top_wd, dir);
+  watchers.emplace(dir, top_wd);
   if (not recurse) {
     return;
   }
@@ -220,7 +214,7 @@ void Watcher::add_watch(std::filesystem::path const& dir, bool recurse) {
     if (ent.is_directory()) {
       try {
         int wd = impl->add_watch(ent.path());
-        watchers.emplace(wd, ent.path());
+        watchers.emplace(ent.path(), wd);
       } catch (const std::exception& ex) {
         // Non-fatal: skip directories we can't watch (permission, etc.)
         std::println("warning: cannot watch {}: {}", ent.path().string(), ex.what());
@@ -230,7 +224,11 @@ void Watcher::add_watch(std::filesystem::path const& dir, bool recurse) {
 }
 
 void Watcher::rm_watch(std::filesystem::path const& dir) {
-  // TODO
+  auto it = watchers.find(dir);
+  if (it != watchers.end()) {
+    impl->rm_watch(it->second);
+    watchers.erase(it);
+  }
 }
 
 }  // namespace rsl::testing::_impl_main
