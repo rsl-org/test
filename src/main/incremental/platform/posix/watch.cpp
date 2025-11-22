@@ -1,5 +1,6 @@
 #include "../watch.hpp"
 
+#include <sys/stat.h>
 #include <sys/inotify.h>
 #include <unistd.h>
 
@@ -85,35 +86,19 @@ static std::vector<InotifyEvent> try_decode_events(std::vector<char>& pending) {
   return out;
 }
 
-enum FileEvent {
-  ACCESS        = 0x00000001,                          /* File was accessed.  */
-  MODIFY        = 0x00000002,                          /* File was modified.  */
-  ATTRIB        = 0x00000004,                          /* Metadata changed.  */
-  CLOSE_WRITE   = 0x00000008,                          /* Writtable file was closed.  */
-  CLOSE_NOWRITE = 0x00000010,                          /* Unwrittable file closed.  */
-  CLOSE         = (IN_CLOSE_WRITE | IN_CLOSE_NOWRITE), /* Close.  */
-  OPEN          = 0x00000020,                          /* File was opened.  */
-  MOVED_FROM    = 0x00000040,                          /* File was moved from X.  */
-  MOVED_TO      = 0x00000080,                          /* File was moved to Y.  */
-  MOVE          = (IN_MOVED_FROM | IN_MOVED_TO),       /* Moves.  */
-  CREATE        = 0x00000100,                          /* Subfile was created.  */
-  DELETE        = 0x00000200,                          /* Subfile was deleted.  */
-  DELETE_SELF   = 0x00000400,                          /* Self was deleted.  */
-  MOVE_SELF     = 0x00000800,                          /* Self was moved.  */
-
-  ISDIR = 0x40000000,
-
-  /* Events sent by the kernel.  */
-  UNMOUNT    = 0x00002000, /* Backing fs was unmounted.  */
-  Q_OVERFLOW = 0x00004000, /* Event queued overflowed.  */
-  IGNORED    = 0x00008000, /* File was ignored.  */
-};
+struct stat path_stat(std::filesystem::path const& path) {
+  struct stat out{};
+  if (auto ret = ::stat(path.c_str(), &out); ret < 0) {
+    throw std::runtime_error(std::format("stat: {}", std::strerror(errno)));
+  }
+  return out;
+}
 }  // namespace
 
 namespace rsl::testing::_impl_main {
 struct WatcherImpl {
   int fd = -1;
-  std::unordered_map<std::filesystem::path, std::chrono::steady_clock::time_point> last_modified;
+  std::unordered_map<std::filesystem::path, time_t> last_modified;
 
   WatcherImpl(WatcherImpl const&) = delete;
   WatcherImpl(WatcherImpl&&)      = default;
@@ -154,16 +139,16 @@ uintptr_t Watcher::get_handle() const {
 }
 
 void Watcher::on_readable(std::span<char const> data) {
-  constexpr auto debounce_threshold = std::chrono::milliseconds(100);
+  constexpr auto debounce_threshold = std::chrono::milliseconds(500);
 
   pending.append_range(data);
   auto events = try_decode_events(pending);
   for (auto const& ev : events) {
     auto it = std::ranges::find_if(watchers, [&](auto&& obj) { return obj.second == ev.wd; });
-    std::filesystem::path dir  = (it != watchers.end()) ? it->first : std::filesystem::path{};
+    std::filesystem::path dir  = (it != watchers.end()) ? std::filesystem::weakly_canonical(it->first) : std::filesystem::path{};
     std::filesystem::path full = ev.name.empty() ? dir : dir / ev.name;
 
-    if ((ev.mask & FileEvent::CREATE) && (ev.mask & IN_ISDIR)) {
+    if ((ev.mask & IN_CREATE) && (ev.mask & IN_ISDIR)) {
       add_watch(full, true);
     }
 
@@ -176,16 +161,12 @@ void Watcher::on_readable(std::span<char const> data) {
       file_deleted(full);
     }
 
-    if ((ev.mask & FileEvent::MODIFY)) {
-      auto now = std::chrono::steady_clock::now();
-      if (auto it = impl->last_modified.find(dir);
-          it != impl->last_modified.end() && now - it->second < debounce_threshold) {
-        // debounce
+    if ((ev.mask & IN_MODIFY)) {
+      auto info = path_stat(full);
+      if (impl->last_modified[full] >= info.st_mtime) {
         continue;
       }
-      impl->last_modified[dir] = now;
-
-      std::println("modified: {}", full.string());
+      impl->last_modified[full] = info.st_mtime;
       file_modified(full);
     }
   }

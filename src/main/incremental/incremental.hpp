@@ -1,10 +1,10 @@
 #pragma once
 #include <ranges>
+#include <cstdio>
 
 #include "compile_pool.hpp"
 #include "config_parser.hpp"
 #include "platform/library.hpp"
-#include "platform/watch.hpp"
 
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
@@ -141,7 +141,18 @@ public:
       pool.submit(tu);
     }
 
-    pool.wait();
+    std::println("Building {} test{}", tus.size(), tus.size() == 1 ? "" : "s");
+
+    auto progress = [](auto done, auto total) {
+      constexpr static auto bar_width = 30;
+      auto filled = static_cast<int>((static_cast<double>(done) / total) * bar_width);
+      auto bar    = std::string(filled, '#') + std::string(bar_width - filled, ' ');
+      std::print("\r[{}] ({}/{})", bar, done, total);
+      std::fflush(stdout);
+    };
+    progress(0, tus.size());
+    pool.wait(progress);
+    std::println("");
 
     for (auto&& [tu, result] : pool.collect()) {
       if (result.exit_code != 0) {

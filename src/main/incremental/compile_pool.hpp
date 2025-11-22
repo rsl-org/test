@@ -63,6 +63,25 @@ public:
     }
   }
 
+  void wait(auto&& on_update) {
+    size_t lastCompleted = completedCount.load(std::memory_order_acquire);
+
+    //! assumes we don't call submit from other threads while waiting
+    size_t total = submittedCount.load(std::memory_order_acquire);
+
+    while (lastCompleted < total) {
+        size_t currentCompleted = completedCount.load(std::memory_order_acquire);
+
+        if (currentCompleted != lastCompleted) {
+            on_update(currentCompleted, total);
+            lastCompleted = currentCompleted;
+        }
+
+        std::this_thread::yield();
+    }
+    on_update(lastCompleted, total);
+  }
+
   std::vector<output_type> collect() {
     std::vector<output_type> output;
     {
@@ -90,11 +109,11 @@ private:
         task = std::move(tasks.front());
         tasks.pop();
       }
-      std::println("building {}", task.out_path.string());
-      auto start_time = std::chrono::steady_clock::now();
+      // std::println("building {}", task.out_path.string());
+      // auto start_time = std::chrono::steady_clock::now();
       output_type result = {task, run_on_cpu(cpu, task.invocation)};
-      auto end_time = std::chrono::steady_clock::now();
-      std::println("{} - {}", task.out_path.string(), std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time));
+      // auto end_time = std::chrono::steady_clock::now();
+      // std::println("{} - {}", task.out_path.string(), std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time));
       {
         std::scoped_lock lock(resultMutex);
         results.push_back(std::move(result));
