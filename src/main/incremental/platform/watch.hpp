@@ -119,14 +119,14 @@ public:
     if (tests.contains(canonical)) {
       std::println("test modified: {}", canonical.string());
       update_dependencies(canonical);
-      runner->recompile(runner->expand_tests({path}));
+      runner->recompile({path}).run(runner->reporter.get(), false);
     } else {
       std::println("test dependency modified: {} {}", canonical.string(), dependencies[canonical].size());
       std::vector<std::filesystem::path> affected;
       for (auto* it : dependencies[canonical]) {
         affected.push_back(*it);
       }
-      runner->recompile(runner->expand_tests(affected));
+      runner->recompile(affected).run(runner->reporter.get(), false);
     }
   }
 

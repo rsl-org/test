@@ -12,9 +12,22 @@
 #include "incremental/platform/stdin.hpp"
 #include "incremental/platform/event_loop.hpp"
 
+#include <execinfo.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
+void handler(int sig) {
+    void *bt[20];
+    int n = backtrace(bt, 20);
+    backtrace_symbols_fd(bt, n, STDERR_FILENO);
+    _exit(1);
+}
 
 int main() {
+  signal(SIGBUS, handler);
+
   using namespace rsl::testing::_impl_main;
   constexpr bool incremental        = true;
   constexpr bool watch_dependencies = true;
@@ -25,50 +38,21 @@ int main() {
   auto runner      = IncrementalRunner(config_path);
   auto test_inputs = runner.discover_tests();
   
-  runner.recompile(runner.expand_tests(test_inputs));
-  runner.update_compdb();
-
-  rsl::testing::TestRoot root;
-
-  auto update_tree = [&](auto file_path) {
-    // remove updated tests from tree
-    // for (auto&& [path, _] : runner.test_sets) {
-    //   root.remove_by_path(path.string());
-    // }
-
-    // rebuild root
-    root = {};
-    // insert
-    rsl::testing::TestRoot tests;
-    for (auto&& [path, test_set] : runner.test_sets) {
-      // std::println("{} -> {}", path.string(), test_set.tests.size());
-      for (auto test_def : test_set.tests) {
-        auto test = test_def(path);
-        root.insert(test);
-        // if (file_path == path) {
-        tests.insert(test);
-        // }
-      }
-    }
-    return tests;
-  };
-  update_tree("");
-
   std::unique_ptr<rsl::testing::Reporter> selected_reporter;
   selected_reporter = rsl::testing::Reporter::make("plain");
-  root.run(selected_reporter.get());
 
-  for (auto& [path, test_set] : runner.test_sets) {
-    unload_library(test_set.handle);
-    test_set.tests = {};
-  }
+  auto root = runner.recompile(test_inputs);
+  runner.update_compdb();
 
+  root.run(runner.reporter.get());
+
+  
   if (incremental) {
     Watcher watch{runner};
     for (auto const& path : runner.config.project.test_path) {
       watch.add_watch(path);
     }
-    
+
     if (watch_dependencies) {
       watch.update_dependencies();
     }

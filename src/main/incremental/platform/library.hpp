@@ -7,10 +7,10 @@ namespace rsl::testing::_impl_main {
 
   library_handle load_library(std::string_view path);
   void unload_library(library_handle& handle);
-  void* find_symbol(library_handle handle, std::string_view name);
+  void* find_symbol(library_handle handle, std::string const& name);
 
   template <typename T>
-  T* find_symbol(library_handle handle, std::string_view name) {
+  T* find_symbol(library_handle handle, std::string const& name) {
     return reinterpret_cast<T*>(find_symbol(handle, name));
   }
 }

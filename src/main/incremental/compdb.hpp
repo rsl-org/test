@@ -22,7 +22,9 @@ struct CompileCommand {
         {     "file",      file}
     };
     if (arguments.has_value()) {
-      obj.emplace("arguments", *arguments);
+      auto cmd_range = *arguments | std::views::join_with(std::string_view(" "));
+      std::string cmd(cmd_range.begin(), cmd_range.end());
+      obj.emplace("command", cmd);
     } else if (command.has_value()) {
       obj.emplace("command", *command);
     }
@@ -49,13 +51,7 @@ struct CompileCommand {
   }
 
   bool operator==(CompileCommand const& other) const {
-    if (directory != other.directory || file != other.file) {
-      return false;
-    }
-    return ((other.arguments.has_value() && arguments.has_value() &&
-             other.arguments == arguments) ||
-            (other.command.has_value() && command.has_value() && other.command == command)) &&
-           (!other.output.has_value() && !output.has_value() || other.output == output);
+    return directory == other.directory && file == other.file;
   }
 };
 

@@ -128,11 +128,20 @@ struct TestDiscovery {
 };
 std::set<TestDef>& registry();
 
+inline std::set<TestDef>& local_registry() {
+  static std::set<TestDef> reg;
+  return reg;
+}
+
 template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_tests() {
   constexpr auto tests = define_static_array(_testing_impl::TestDiscovery::find_tests<TUTag>(NS));
   for (auto const& test : tests) {
-    _testing_impl::registry().insert(test);
+#ifdef RSL_TEST_UNIT
+  local_registry().insert(test);
+#else
+  _testing_impl::registry().insert(test);
+#endif 
   }
   return true;
 }
