@@ -1,23 +1,48 @@
 #pragma once
+#include <print>
 #include <ranges>
 #include <cstdio>
+#include <map>
 
 #include "compile_pool.hpp"
 #include "config_parser.hpp"
+#include "compdb.hpp"
 #include "platform/library.hpp"
 
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
 namespace rsl::testing::_impl_main {
 struct TestSet {
-  void* handle;
+  void* handle = nullptr;
   std::set<rsl::testing::TestDef> tests;
+
+  void unload() {
+    if (handle != nullptr) {
+      unload_library(handle);
+      tests = {};
+    }
+  }
+};
+
+struct TestUnit {
+  std::filesystem::path source_path;
+
+  // library path -> metadata (path is different between configurations)
+  std::unordered_map<std::filesystem::path, TestSet> sets;
 };
 
 struct IncrementalRunner {
   CompilePool pool;  // TODO use more generic task pool?
   RunnerConfig config;
+
+  std::map<std::filesystem::path, TestUnit> units;
+  // reverse dependency map
+  std::unordered_map<std::filesystem::path, std::set<std::filesystem::path const*>> dependencies;
+
+  // TODO map source -> testset
   std::unordered_map<std::filesystem::path, TestSet> test_sets;
+
+  CompileCommands compdb;
 
   // TODO move to config?
   static constexpr std::array allowed_extensions = {".cpp"};
@@ -25,33 +50,30 @@ struct IncrementalRunner {
 public:
   IncrementalRunner() = default;
   explicit IncrementalRunner(std::filesystem::path const& config_path)
-      : config(load_runner_config(config_path)) {}
+      : config(load_runner_config(config_path)) {
+    compdb = CompileCommands(config.project.build_path / "compile_commands.json");
+  }
 
-  [[nodiscard]]
-  TestTU make_invocation(std::string_view config_name,
-                         std::filesystem::path const& test_path,
-                         bool dump_dependencies = false) const {
+  void update_compdb() {
+    compdb.load();
+    for (auto const& path : test_sets) {
+      auto tu = make_invocation("default", path.first);
+      compdb.append_if_missing({.directory = tu.source_path.parent_path(),
+                                .file      = tu.source_path,
+                                .arguments = tu.invocation.arguments,
+                                .output    = tu.out_path});
+    }
+    compdb.save();
+  }
+
+  std::vector<std::string> expand_options(std::string_view config_name) const {
     const auto& options = config.options;
-
-    const auto& configurations = config.configurations;
-
-    const std::filesystem::path build_path   = config.project.build_path;
-    const std::filesystem::path project_path = config.project.project_path;
-
-    const auto& cfg = configurations.at(std::string(config_name));
+    const auto& cfg = config.configurations.at(std::string(config_name));
 
     const bool ext                  = cfg.gnu_extensions;
     const auto ver                  = cfg.standard;
     const std::string standard      = std::format("-std={}++{}", (ext ? "gnu" : "c"), ver);
-    const std::string compiler_path = cfg.compiler_path;
-
-    std::filesystem::path out_path =
-        build_path / std::filesystem::relative(test_path, project_path);
-    out_path.replace_extension(".so");
-
     std::vector<std::string> cmd;
-
-    cmd.push_back(compiler_path);
     cmd.push_back(standard);
 
     for (auto const& o : options.compile_options) {
@@ -66,8 +88,15 @@ public:
       cmd.push_back(std::format("-D{}", d));
     }
 
-    if (not dump_dependencies) {
-      for (auto const& lib : options.link_libraries) {
+    if (auto ns = config.project.namespace_; not ns.empty()) {
+      cmd.emplace_back("-DRSL_TEST_NAMESPACE=" + ns);
+    }
+    return cmd;
+  }
+
+  std::vector<std::string> expand_link_options() const {
+    std::vector<std::string> cmd;
+    for (auto const& lib : config.options.link_libraries) {
         if (lib.is_absolute()) {
           cmd.push_back(std::format("-L{}", lib.string()));
         } else {
@@ -79,14 +108,31 @@ public:
       // cmd.push_back(std::format("-L{}", build_path.string()));
       cmd.emplace_back("-fPIC");
       cmd.emplace_back("-shared");
+      return cmd;
+  }
+
+  [[nodiscard]]
+  TestTU make_invocation(std::string_view config_name,
+                         std::filesystem::path const& test_path,
+                         bool dump_dependencies = false) const {
+    const std::filesystem::path build_path   = config.project.build_path;
+    const std::filesystem::path project_path = config.project.project_path;
+
+    const auto& cfg = config.configurations.at(std::string(config_name));
+    const std::string compiler_path = cfg.compiler_path;
+
+    std::filesystem::path out_path = build_path / std::filesystem::relative(test_path, project_path);
+    out_path.replace_extension(".so");
+
+    std::vector<std::string> cmd = {compiler_path};
+    cmd.append_range(expand_options(config_name));
+
+    if (not dump_dependencies) {
+      cmd.append_range(expand_link_options());
 
       // out file
       cmd.emplace_back("-o");
       cmd.push_back(out_path.string());
-    }
-
-    if (auto ns = config.project.namespace_; not ns.empty()) {
-      cmd.emplace_back("-DRSL_TEST_NAMESPACE=" + ns);
     }
 
     // input file
@@ -182,11 +228,7 @@ public:
 
   void unload(std::filesystem::path const& file) {
     if (auto it = test_sets.find(file); it != test_sets.end()) {
-      auto& [handle, tests] = it->second;
-      if (handle != nullptr) {
-        unload_library(handle);
-        tests = {};
-      }
+      it->second.unload();
     }
   }
 };

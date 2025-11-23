@@ -24,8 +24,9 @@ int main() {
 
   auto runner      = IncrementalRunner(config_path);
   auto test_inputs = runner.discover_tests();
-
+  
   runner.recompile(runner.expand_tests(test_inputs));
+  runner.update_compdb();
 
   rsl::testing::TestRoot root;
 

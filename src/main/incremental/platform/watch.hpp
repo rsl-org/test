@@ -58,7 +58,7 @@ inline bool is_relative_to(std::filesystem::path const& path, std::filesystem::p
 
 class Watcher {
   WatcherImpl* impl;
-  std::unordered_map<std::filesystem::path, int> watchers;  // TODO flip
+  std::unordered_map<std::filesystem::path, int> watchers;
 
   std::vector<char> pending;
   IncrementalRunner* runner;
