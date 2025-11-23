@@ -62,7 +62,7 @@ struct TestUnit {
     //   std::println("test registry not empty");
     //   rsl::testing::_testing_impl::registry().clear();
     // }
-    auto path = std::filesystem::canonical(library_path);
+    auto path = canonical(library_path);
     auto tmp_path = std::filesystem::path(library_path).replace_extension(".so." + std::to_string(counter++));
     while (exists(tmp_path)) {
       std::println("already got {} ", tmp_path.string());
@@ -105,7 +105,7 @@ struct TestUnit {
 
   void unload(std::filesystem::path const& path) {
     remove_stale(path);
-    if (auto it = sets.find(std::filesystem::weakly_canonical(path)); it != sets.end()) {
+    if (auto it = sets.find(weakly_canonical(path)); it != sets.end()) {
       it->second.unload();
       sets.erase(it);
     }
@@ -205,9 +205,9 @@ public:
     const std::string compiler_path = cfg.compiler_path;
 
     std::filesystem::path out_path =
-        build_path / std::filesystem::relative(test_path, project_path);
+        build_path / relative(test_path, project_path);
     out_path.replace_extension(".so");
-    out_path = std::filesystem::weakly_canonical(out_path);
+    out_path = weakly_canonical(out_path);
 
     std::vector<std::string> cmd = {compiler_path};
     cmd.append_range(expand_options(config_name));

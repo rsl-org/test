@@ -48,8 +48,8 @@ inline std::vector<std::filesystem::path> parse_dependencies(std::string_view in
 }
 
 inline bool is_relative_to(std::filesystem::path const& path, std::filesystem::path const& base) {
-  auto abs_path           = std::filesystem::weakly_canonical(path);
-  auto abs_base           = std::filesystem::weakly_canonical(base);
+  auto abs_path           = weakly_canonical(path);
+  auto abs_base           = weakly_canonical(base);
   auto [it_path, it_base] = std::ranges::mismatch(abs_path, abs_base);
   return it_base == abs_base.end();
 }
@@ -99,7 +99,7 @@ public:
       auto [it, _] = tests.insert(r.source_path);
 
       for (auto dependency : parse_dependencies(result.stdout_str)) {
-        dependency = std::filesystem::canonical(dependency);
+        dependency = canonical(dependency);
         if (dependency == r.source_path) { continue; }
         if (not is_relative_to(dependency, runner->config.project.project_path)) {
           continue;

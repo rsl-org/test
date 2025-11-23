@@ -145,7 +145,7 @@ void Watcher::on_readable(std::span<char const> data) {
   auto events = try_decode_events(pending);
   for (auto const& ev : events) {
     auto it = std::ranges::find_if(watchers, [&](auto&& obj) { return obj.second == ev.wd; });
-    std::filesystem::path dir  = (it != watchers.end()) ? std::filesystem::weakly_canonical(it->first) : std::filesystem::path{};
+    std::filesystem::path dir  = (it != watchers.end()) ? weakly_canonical(it->first) : std::filesystem::path{};
     std::filesystem::path full = ev.name.empty() ? dir : dir / ev.name;
 
     if ((ev.mask & IN_CREATE) && (ev.mask & IN_ISDIR)) {
