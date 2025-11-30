@@ -18,6 +18,8 @@
 #include <vector>
 #include "incremental/incremental.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace {
 constexpr std::uint32_t watch_mask = IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM |
                                      IN_MOVED_TO | IN_ATTRIB | IN_DELETE_SELF | IN_MOVE_SELF;
@@ -183,7 +185,8 @@ void Watcher::add_watch(std::filesystem::path const& dir, bool recurse) {
     return;
   }
 
-  std::println("watching {} for changes", dir.string());
+  // std::println("watching {} for changes", dir.string());
+  std::println("{}", nlohmann::json({{"action", "add_watch"}, {"path", dir.string()}}).dump());
 
   int top_wd = impl->add_watch(dir);
   watchers.emplace(dir, top_wd);

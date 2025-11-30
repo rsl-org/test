@@ -79,7 +79,6 @@ public:
 
         std::this_thread::yield();
     }
-    on_update(lastCompleted, total);
   }
 
   std::vector<output_type> collect() {

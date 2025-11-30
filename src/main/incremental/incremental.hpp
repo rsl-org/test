@@ -2,6 +2,7 @@
 #include <dlfcn.h>
 #include <cstdint>
 #include <filesystem>
+#include <nlohmann/json.hpp>
 #include <print>
 #include <ranges>
 #include <cstdio>
@@ -58,45 +59,39 @@ struct TestUnit {
   size_t counter = 0;
 
   std::set<rsl::testing::TestDef> load(std::filesystem::path const& library_path) {
-    // if (not rsl::testing::_testing_impl::registry().empty()) {
-    //   std::println("test registry not empty");
-    //   rsl::testing::_testing_impl::registry().clear();
-    // }
     auto path = canonical(library_path);
-    auto tmp_path = std::filesystem::path(library_path).replace_extension(".so." + std::to_string(counter++));
+    auto tmp_path =
+        std::filesystem::path(library_path).replace_extension(".so." + std::to_string(counter++));
     while (exists(tmp_path)) {
-      std::println("already got {} ", tmp_path.string());
-      tmp_path = std::filesystem::path(library_path).replace_extension(".so." + std::to_string(counter++));
-
+      tmp_path =
+          std::filesystem::path(library_path).replace_extension(".so." + std::to_string(counter++));
     }
 
     // check if we have the key already, make sure old one is unloaded
     unload(path);
 
     std::filesystem::rename(library_path, tmp_path);
-
     library_handle handle = load_library(tmp_path.string());
-
     if (handle == nullptr) {
-      // rsl::testing::_testing_impl::registry().clear();
       std::println("unable to load library");
       return {};
     }
 
-    auto fnc = find_symbol<std::set<TestDef>()>(handle, "load_tests");
+    auto fnc = find_symbol<void*()>(handle, "load_tests");
     if (fnc == nullptr) {
       std::println("load_tests missing");
       return {};
     }
-    auto test_sets = fnc();
-    sets.insert_or_assign(path, TestSet{handle, test_sets});
-    return test_sets;
+    auto test_sets = reinterpret_cast<std::set<rsl::testing::TestDef>*>(fnc());
+    sets.insert_or_assign(path, TestSet{handle, *test_sets});
+    return *test_sets;
   }
 
-  static void remove_stale(std::filesystem::path const& path){
-    std::filesystem::path tmp_path = path;
+  static void remove_stale(std::filesystem::path const& path) {
     for (const auto& entry : std::filesystem::directory_iterator(path.parent_path())) {
-      if (!entry.is_regular_file()) { continue; }
+      if (!entry.is_regular_file()) {
+        continue;
+      }
       if (path.filename().string() == entry.path().stem().string()) {
         remove(entry.path());
       }
@@ -130,8 +125,8 @@ public:
   explicit IncrementalRunner(std::filesystem::path const& config_path)
       : config(load_runner_config(config_path)) {
     // TODO check build_path/compile_commands.json if this doesn't exist
-    compdb = CompileCommands(config.project.project_path / "compile_commands.json");
-    reporter = rsl::testing::Reporter::make("plain");
+    compdb   = CompileCommands(config.project.project_path / "compile_commands.json");
+    reporter = rsl::testing::Reporter::make("json");
   }
 
   void update_compdb() {
@@ -204,8 +199,7 @@ public:
     const auto& cfg                 = config.configurations.at(std::string(config_name));
     const std::string compiler_path = cfg.compiler_path;
 
-    std::filesystem::path out_path =
-        build_path / relative(test_path, project_path);
+    std::filesystem::path out_path = build_path / relative(test_path, project_path);
     out_path.replace_extension(".so");
     out_path = weakly_canonical(out_path);
 
@@ -269,21 +263,32 @@ public:
     //! this function is not thread-safe, it shall only be invoked from the main thread
     auto tus = expand_tests(paths);
     for (auto&& tu : tus) {
+      auto parent = std::filesystem::weakly_canonical(tu.out_path).parent_path();
+      if (!parent.empty() && !exists(parent)) {
+        create_directories(parent);
+      }
       pool.submit(tu);
     }
 
-    std::println("Building {} test{}", tus.size(), tus.size() == 1 ? "" : "s");
+    // std::println("Building {} test{}", tus.size(), tus.size() == 1 ? "" : "s");
 
     auto progress = [](auto done, auto total) {
-      constexpr static auto bar_width = 30;
-      auto filled = static_cast<int>((static_cast<double>(done) / total) * bar_width);
-      auto bar    = std::string(filled, '#') + std::string(bar_width - filled, ' ');
-      std::print("\r[{}] ({}/{})", bar, done, total);
+      // constexpr static auto bar_width = 30;
+      // auto filled = static_cast<int>((static_cast<double>(done) / total) * bar_width);
+      // auto bar    = std::string(filled, '#') + std::string(bar_width - filled, ' ');
+      // std::print("\r[{}] ({}/{})", bar, done, total);
+      // std::fflush(stdout);
+      auto doc = nlohmann::json({
+          {"action", "batch_progress"},
+          {  "done",             done},
+          { "total",            total}
+      });
+      std::println("{}", doc.dump());
       std::fflush(stdout);
     };
     progress(0, tus.size());
     pool.wait(progress);
-    std::println("");
+    // std::println("");
 
     TestRoot root;
     for (auto&& [tu, result] : pool.collect()) {
@@ -293,7 +298,7 @@ public:
         std::println("====== stderr ======\n{}", result.stderr_str);
         continue;
       }
-      
+
       auto test_defs = units[tu.source_path].load(tu.out_path);
       for (auto def : test_defs) {
         auto expanded = def(tu.source_path);
@@ -301,6 +306,38 @@ public:
       }
     }
     return root;
+  }
+
+  void run_all() {
+    auto test_inputs = discover_tests();
+    auto root        = recompile(test_inputs);
+    root.run(reporter.get());
+    update_compdb();
+  }
+
+  void list_all() {
+    auto test_inputs = discover_tests();
+    auto root        = recompile(test_inputs);
+
+    auto tests = nlohmann::json::array();
+    for (auto const& test : root) {
+      auto cases = nlohmann::json::array();
+      for (auto const& test_case : test.get_tests()) {
+        cases.push_back(test_case.name);
+      }
+
+      tests.push_back({
+          {     "name",      test.name},
+          {"full_name", test.full_name},
+          {    "cases",          cases},
+          {"path", test.sloc.file_name()}
+      });
+    }
+    std::println("{}",
+                 nlohmann::json({{"action", "list"},
+                                 { "tests",  tests}})
+                     .dump());
+    std::fflush(stdout);
   }
 };
 }  // namespace rsl::testing::_impl_main

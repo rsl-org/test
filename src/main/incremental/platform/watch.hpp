@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include <chrono>
 #include <filesystem>
 #include <span>
@@ -54,8 +56,6 @@ inline bool is_relative_to(std::filesystem::path const& path, std::filesystem::p
   return it_base == abs_base.end();
 }
 
-
-
 class Watcher {
   WatcherImpl* impl;
   std::unordered_map<std::filesystem::path, int> watchers;
@@ -63,7 +63,7 @@ class Watcher {
   std::vector<char> pending;
   IncrementalRunner* runner;
 
-  std::set<std::filesystem::path> tests;
+  // std::set<std::filesystem::path> tests;
   std::unordered_map<std::filesystem::path, std::set<std::filesystem::path const*>> dependencies;
 
 public:
@@ -83,12 +83,12 @@ public:
     } else {
       paths = {path};
     }
-    
+
     for (auto&& tu : runner->expand_tests(paths, true)) {
       runner->pool.submit(tu);
     }
     runner->pool.wait();
-    
+
     std::set<std::filesystem::path> folders;
     for (auto [r, result] : runner->pool.collect()) {
       if (result.exit_code != 0) {
@@ -96,19 +96,21 @@ public:
       }
 
       // TODO remove everything referring to r.source_path first
-      auto [it, _] = tests.insert(r.source_path);
+      auto [it, _] = runner->units.insert({r.source_path, {}});
 
       for (auto dependency : parse_dependencies(result.stdout_str)) {
         dependency = canonical(dependency);
-        if (dependency == r.source_path) { continue; }
+        if (dependency == r.source_path) {
+          continue;
+        }
         if (not is_relative_to(dependency, runner->config.project.project_path)) {
           continue;
         }
-        dependencies[dependency].insert(&*it);
+        dependencies[dependency].insert(&it->first);
         folders.insert(dependency.parent_path());
       }
     }
-    
+
     for (auto const& folder : folders) {
       add_watch(folder);
     }
@@ -116,17 +118,34 @@ public:
 
   void file_modified(std::filesystem::path const& path) {
     auto canonical = std::filesystem::canonical(path);
-    if (tests.contains(canonical)) {
-      std::println("test modified: {}", canonical.string());
+    if (runner->units.contains(canonical)) {
+      // std::println("test modified: {}", canonical.string());
+      std::println("{}",
+                   nlohmann::json({
+                                      {"action",    "file_modified"},
+                                      {  "path", canonical.string()}
+      })
+                       .dump());
+
       update_dependencies(canonical);
-      runner->recompile({path}).run(runner->reporter.get(), false);
+      runner->recompile({path}).run(runner->reporter.get());
     } else {
-      std::println("test dependency modified: {} {}", canonical.string(), dependencies[canonical].size());
+      // std::println("test dependency modified: {} {}", canonical.string(),
+      // dependencies[canonical].size());
+
       std::vector<std::filesystem::path> affected;
       for (auto* it : dependencies[canonical]) {
         affected.push_back(*it);
       }
-      runner->recompile(affected).run(runner->reporter.get(), false);
+      std::println("{}",
+                   nlohmann::json({
+                                      {    "action",    "file_modified"},
+                                      {      "path", canonical.string()},
+                                      {"dependency",               true},
+                                      {  "affected",           affected}
+      })
+                       .dump());
+      runner->recompile(affected).run(runner->reporter.get());
     }
   }
 

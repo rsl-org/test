@@ -20,14 +20,14 @@ class TerminalCommand {
 #else
   uintptr_t handle = 0;
 #endif
-  IncrementalRunner* runner;
-  Watcher* watcher;
+  IncrementalRunner* runner = nullptr;
+  Watcher* watcher = nullptr;
 
 public:
-  explicit TerminalCommand(IncrementalRunner& runner, Watcher& watcher) 
-  : runner(&runner) 
-  , watcher(&watcher)
-  {}
+TerminalCommand() = default;
+  explicit TerminalCommand(IncrementalRunner& runner, Watcher& watcher)
+      : runner(&runner)
+      , watcher(&watcher) {}
 
   [[nodiscard]] uintptr_t get_handle() const { return handle; }
 
@@ -43,14 +43,21 @@ public:
     if (data == "exit") {
       std::exit(0);
       return;
+    } else if (data == "list") {
+      runner->list_all();
+      return;
+    } else if (data == "run") {
+      runner->run_all();
+      return;
     }
     // all other commands require an argument, try splitting
     std::string_view cmd;
     std::string_view argument;
     if (auto it = data.find(' '); it != data.npos) {
-      cmd     = data.substr(0, it);
+      cmd      = data.substr(0, it);
       argument = data.substr(it + 1);
     } else {
+      std::println("Missing argument or unrecognized command");
       return;
     }
 
@@ -58,10 +65,14 @@ public:
       watcher->add_watch(argument);
     } else if (cmd == "rm_watch") {
       watcher->rm_watch(argument);
-    } else if (cmd == "run") {
+    } else if (cmd == "coverage") {
+      bool value = argument == "on";
+      if (!value && argument != "off") {
+        std::println("Invalid argument - expected `on` or `off`");
+      }
       // TODO
-    } else if (cmd == "stop_running") {
-      // TODO
+    } else {
+      std::println("Unrecognized command");
     }
   }
 };

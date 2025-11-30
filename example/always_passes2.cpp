@@ -16,8 +16,8 @@ auto zoinks(bool zoinks) {
 }
 
 void test_always_passes() {
-  std::cout << "foo\n";
-  std::cerr << "bar\n";
+  // std::cout << "foo\n";
+  // std::cerr << "bar\n";
   zoinks(false);
   // zoinks(true);
 }

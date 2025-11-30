@@ -1,73 +1,92 @@
 #include <filesystem>
-
-#include <nlohmann/json.hpp>
+#include <rsl/config>
 
 #include <rsl/testing/_testing_impl/discovery.hpp>
 #include <rsl/testing/output.hpp>
-#include <string>
-#include <unordered_map>
 
 #include "incremental/incremental.hpp"
 #include "incremental/platform/library.hpp"
 #include "incremental/platform/stdin.hpp"
 #include "incremental/platform/event_loop.hpp"
 
+#include "output.hpp"
+
 #include <execinfo.h>
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 
-void handler(int sig) {
-    void *bt[20];
-    int n = backtrace(bt, 20);
-    backtrace_symbols_fd(bt, n, STDERR_FILENO);
-    _exit(1);
+void sigbus_handler(int sig) {
+  void* bt[20];
+  int n = backtrace(bt, 20);
+  backtrace_symbols_fd(bt, n, STDERR_FILENO);
+  _exit(1);
 }
 
-int main() {
-  signal(SIGBUS, handler);
+class[[= rsl::cli::description("rsl::test (in Catch2 v3.8.1 compatibility mode)")]] CLI
+    : public rsl::cli {
+  rsl::testing::TestRoot tree;
+  std::vector<std::string> sections;
+  std::unique_ptr<rsl::testing::Output> _output;
+
+public:
+  [[= positional]] std::string filter     = "";
+  [[= option]] std::string reporter       = "plain";
+  [[= option]] bool durations             = true;
+  [[= option]] bool use_colour            = true;
+  [[ = option, = flag ]] bool list_tests  = false;
+  [[ = option, = flag ]] bool interactive = false;
+
+  [[ = option, = shorthand("c") ]] void section(std::string part) {
+    sections.emplace_back(std::move(part));
+  }
+
+  [[= option]] void output(std::string filename) {
+    _output = std::make_unique<rsl::testing::FileOutput>(filename);
+  }
+
+  [[= option]] void verbosity(std::string level) {}
+
+  explicit CLI() : tree(rsl::testing::get_tests()), _output(new rsl::testing::ConsoleOutput()) {}
+
+  void apply_filter() {}
+
+  static void print_tests(rsl::testing::TestNamespace const& current, std::size_t indent = 0) {
+    auto current_indent = std::string(indent * 2, ' ');
+    for (auto const& ns : current.children) {
+      std::println("{}{}", current_indent, ns.name);
+      print_tests(ns, indent + 1);
+    }
+
+    for (auto const& test : current.tests) {
+      std::println("{} - {}", current_indent, test.name);
+      for (auto const& run : test.get_tests()) {
+        std::println("{} - {}", std::string((indent + 1) * 2, ' '), run.name);
+      }
+    }
+  }
+};
+
+int main(int argc, char** argv) {
+  signal(SIGBUS, sigbus_handler);
 
   using namespace rsl::testing::_impl_main;
-  constexpr bool incremental        = true;
-  constexpr bool watch_dependencies = true;
-
   const auto executable_path = std::filesystem::canonical("/proc/self/exe").parent_path();
   const std::filesystem::path config_path = executable_path / "test-runner.json";
 
-  auto runner      = IncrementalRunner(config_path);
-  auto test_inputs = runner.discover_tests();
-  
-  std::unique_ptr<rsl::testing::Reporter> selected_reporter;
-  selected_reporter = rsl::testing::Reporter::make("plain");
+  auto runner = IncrementalRunner(config_path);
+  // runner.update_compdb();
 
-  auto root = runner.recompile(test_inputs);
-  runner.update_compdb();
+  auto args = CLI();
+  args.parse_args(argc, argv);
 
-  root.run(runner.reporter.get());
-
-  
-  if (incremental) {
-    Watcher watch{runner};
-    for (auto const& path : runner.config.project.test_path) {
-      watch.add_watch(path);
-    }
-
-    if (watch_dependencies) {
-      watch.update_dependencies();
-    }
-    // auto watch_fnc = [&](auto path, FileEvent event) {
-    //   if ((event & FileEvent::MODIFY) == FileEvent::MODIFY) {
-    //     // compile TU
-    //     runner.recompile(runner.expand_tests({path}));
-    //     // load TU
-    //     auto updated = update_tree(path);
-    //     // updated.run(selected_reporter.get(), false);
-    //   }
-    // };
-    TerminalCommand commands{runner, watch};
-
-    auto loop = EventLoop(commands, watch);
+  if (args.interactive) {
+    auto watch    = Watcher(runner);
+    auto commands = TerminalCommand(runner, watch);
+    auto loop     = EventLoop(commands, watch);
     loop.run();
   }
+
+  // if (watch_dependencies) {
+  //   watch.update_dependencies();
+  // }
 }

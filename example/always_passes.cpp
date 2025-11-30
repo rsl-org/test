@@ -1,4 +1,5 @@
 #include <rsl/test>
+#include "include/dep.h"
 #include <iostream>
 
 namespace demo {
@@ -16,9 +17,10 @@ auto zoinks(bool zoinks) {
 }
 
 [[= rsl::test]] void always_passes() {
-  std::cout << "foo\n";
-  std::cerr << "bar\n";
+  // std::cout << "foo\n";
+  // std::cerr << "bar\n";
   zoinks(false);
   // zoinks(true);
+  zoinks(foo());
 }
 }  // namespace demo

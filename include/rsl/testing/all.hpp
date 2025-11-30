@@ -71,8 +71,8 @@ extern "C"
 __attribute__((__visibility__("default")))
 __attribute__((__used__))
 inline 
-std::set<rsl::testing::TestDef> load_tests() {
-  return rsl::testing::_testing_impl::local_registry();
+void* load_tests() {
+  return &rsl::testing::_testing_impl::local_registry();
 }
 
 #endif
