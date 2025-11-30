@@ -4,10 +4,10 @@
 #include <rsl/testing/_testing_impl/discovery.hpp>
 #include <rsl/testing/output.hpp>
 
-#include "incremental/incremental.hpp"
-#include "incremental/platform/library.hpp"
-#include "incremental/platform/stdin.hpp"
-#include "incremental/platform/event_loop.hpp"
+#include "incremental.hpp"
+#include "platform/library.hpp"
+#include "platform/stdin.hpp"
+#include "platform/event_loop.hpp"
 
 #include "output.hpp"
 

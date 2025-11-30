@@ -16,7 +16,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "incremental/incremental.hpp"
+#include "incremental.hpp"
 
 #include <nlohmann/json.hpp>
 
