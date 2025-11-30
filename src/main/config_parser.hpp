@@ -1,10 +1,8 @@
 #pragma once
 #include <ranges>
-#include <algorithm>
 #include <stdexcept>
 #include <vector>
 #include <filesystem>
-#include <format>
 #include <fstream>
 
 #include <nlohmann/json.hpp>

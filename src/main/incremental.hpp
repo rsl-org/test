@@ -1,6 +1,5 @@
 #pragma once
 #include <dlfcn.h>
-#include <cstdint>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 #include <print>
@@ -43,11 +42,11 @@ struct TestSet {
     return *this;
   }
 
-  // ~TestSet() { unload(); }
+  ~TestSet() { unload(); }
 
   void unload() {
     if (handle != nullptr) {
-      // unload_library(handle);
+      unload_library(handle);
       tests = {};
     }
   }
