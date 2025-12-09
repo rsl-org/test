@@ -67,12 +67,13 @@ struct Anchor<std::meta::info, V> {
 #define RSLTEST_ANCHOR_OVERLOAD(TYPE, VALUE) RSLTEST_ANCHOR_IMPL(TYPE, VALUE)
 
 #ifdef RSL_TEST_UNIT
+// TODO REMOVE
 extern "C"
 __attribute__((__visibility__("default")))
 __attribute__((__used__))
 inline 
 void* load_tests() {
-  return &rsl::testing::_testing_impl::local_registry();
+  return &rsl::testing::_testing_impl::registry();
 }
 
 #endif

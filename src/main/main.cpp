@@ -74,7 +74,6 @@ int main(int argc, char** argv) {
   const std::filesystem::path config_path = executable_path / "test-runner.json";
 
   auto runner = IncrementalRunner(config_path);
-  // runner.update_compdb();
 
   auto args = CLI();
   args.parse_args(argc, argv);

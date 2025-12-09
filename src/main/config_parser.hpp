@@ -99,6 +99,51 @@ struct RunnerConfig {
   Project project;
   Options options;
   std::unordered_map<std::string, Configuration> configurations;
+
+  std::vector<std::string> expand_options(std::string_view config_name) const {
+    const auto& cfg     = configurations.at(std::string(config_name));
+
+    const bool ext             = cfg.gnu_extensions;
+    const auto ver             = cfg.standard;
+    const std::string standard = std::format("-std={}++{}", (ext ? "gnu" : "c"), ver);
+    std::vector<std::string> cmd;
+    cmd.push_back(standard);
+
+    for (auto const& o : options.compile_options) {
+      cmd.push_back(o);
+    }
+
+    for (auto const& dir : options.include_dirs) {
+      cmd.push_back(std::format("-I{}", dir.string()));
+    }
+
+    for (auto const& d : options.compile_definitions) {
+      cmd.push_back(std::format("-D{}", d));
+    }
+
+    if (auto ns = project.namespace_; not ns.empty()) {
+      cmd.emplace_back("-DRSL_TEST_NAMESPACE=" + ns);
+    }
+    cmd.emplace_back("-DRSL_TEST_UNIT");
+    return cmd;
+  }
+
+  std::vector<std::string> expand_link_options() const {
+    std::vector<std::string> cmd;
+    for (auto const& lib : options.link_libraries) {
+      if (lib.is_absolute()) {
+        cmd.push_back(std::format("{}", lib.string()));
+      } else {
+        cmd.push_back(std::format("-l{}", lib.string()));
+      }
+    }
+
+    // cmd.push_back(std::format("-Wl,-rpath,{}", build_path.string()));
+    // cmd.push_back(std::format("-L{}", build_path.string()));
+    cmd.emplace_back("-fPIC");
+    cmd.emplace_back("-shared");
+    return cmd;
+  }
 };
 
 inline void to_json(nlohmann::json& doc, RunnerConfig const& p) {

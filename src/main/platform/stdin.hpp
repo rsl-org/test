@@ -49,6 +49,9 @@ TerminalCommand() = default;
     } else if (data == "run") {
       runner->run_all();
       return;
+    } else if (data == "compdb") {
+      runner->update_compdb();
+      return;
     }
     // all other commands require an argument, try splitting
     std::string_view cmd;

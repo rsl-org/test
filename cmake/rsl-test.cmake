@@ -211,9 +211,18 @@ function(target_enable_tests _TEST_ARG_TARGET)
   target_link_libraries(_deps_target INTERFACE ${_TEST_ARG_TARGET})
   target_link_libraries(_deps_target INTERFACE rsltest)
 
-  # _impl_property(_dep_link_libs INTERFACE_LINK_LIBRARIES TARGET _dep_target)
-  # _impl_property(_dep_includes INTERFACE_INCLUDE_DIRECTORIES TARGET _dep_target)
-  # _impl_property(_dep_defines INTERFACE_COMPILE_DEFINITIONS TARGET _dep_target)
+  include(FetchContent)
+  FetchContent_Declare(
+    libassert
+    GIT_REPOSITORY https://github.com/jeremy-rifkin/libassert.git
+    GIT_TAG        v2.2.1 # <HASH or TAG>
+  )
+  FetchContent_MakeAvailable(libassert)
+  target_link_libraries(_deps_target INTERFACE libassert::assert)
+
+  # _impl_property(_dep_link_libs INTERFACE_LINK_LIBRARIES TARGET _deps_target)
+  #_impl_property(_dep_includes INTERFACE_INCLUDE_DIRECTORIES TARGET _dep_target)
+  #_impl_property(_dep_defines INTERFACE_COMPILE_DEFINITIONS TARGET _dep_target)
 
   collect_interface_usage(_deps_target _transitive_inc _transitive_defs _transitive_opts _transitive_libs)
 

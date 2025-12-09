@@ -4,8 +4,8 @@
 #include <string>
 #include <format>
 
-#include "test.hpp"
-#include "_testing_impl/factory.hpp"
+#include "../test.hpp"
+#include "../_testing_impl/factory.hpp"
 
 namespace rsl::testing {
 struct Output {
@@ -31,7 +31,7 @@ struct Reporter : _testing_impl::Factory<Reporter> {
   virtual void before_test(TestCase const& test) = 0;
   virtual void after_test(Result const& result)   = 0;
 
-  virtual void list_tests(TestNamespace const& tests);
+  virtual void list_tests(TestNamespace const& tests) {}
 
   virtual void enter_namespace(std::string_view name) {}
   virtual void exit_namespace(std::string_view name) {}

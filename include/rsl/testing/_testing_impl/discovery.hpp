@@ -56,15 +56,19 @@ struct TestDiscovery {
   std::meta::access_context ctx = std::meta::access_context::current();
 
   consteval void handle_member(std::meta::info R) {
-    if (!has_identifier(R)) { return; }
-    
+    if (!has_identifier(R)) {
+      return;
+    }
+
     auto identifier = identifier_of(R);
-    if (identifier[0] == '_') { return; }
-    
+    if (identifier[0] == '_') {
+      return;
+    }
+
     if (!(is_function(R) || is_variable(R) || (is_complete_type(R) && is_class_type(R)))) {
       return;
     }
-    
+
     if (identifier.starts_with("test_")) {
       if (is_complete_type(R) && is_class_type(R)) {
         tests.append_range(expand_class(R));
@@ -126,9 +130,8 @@ struct TestDiscovery {
     return discovery.tests;
   }
 };
-std::set<TestDef>& registry();
 
-inline std::set<TestDef>& local_registry() {
+inline std::set<TestDef>& registry() {
   static std::set<TestDef> reg;
   return reg;
 }
@@ -137,11 +140,7 @@ template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_tests() {
   constexpr auto tests = define_static_array(_testing_impl::TestDiscovery::find_tests<TUTag>(NS));
   for (auto const& test : tests) {
-#ifdef RSL_TEST_UNIT
-  local_registry().insert(test);
-#else
-  _testing_impl::registry().insert(test);
-#endif 
+    registry().insert(test);
   }
   return true;
 }

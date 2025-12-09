@@ -24,3 +24,5 @@ auto zoinks(bool zoinks) {
   zoinks(foo());
 }
 }  // namespace demo
+
+int main(){}

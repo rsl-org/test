@@ -115,6 +115,7 @@ struct IncrementalRunner {
   std::unordered_map<std::filesystem::path, std::set<std::filesystem::path const*>> dependencies;
   std::unique_ptr<rsl::testing::Reporter> reporter;
   CompileCommands compdb;
+  size_t invocation_counter = 0;
 
   // TODO move to config?
   static constexpr std::array allowed_extensions = {".cpp"};
@@ -131,7 +132,7 @@ public:
   void update_compdb() {
     compdb.load();
     for (auto const& [path, unit] : units) {
-      auto tu = make_invocation("default", path, false, false);
+      auto tu = make_invocation("default", path, false, true);
       compdb.append_if_missing({.directory = config.project.build_path,
                                 .file      = tu.source_path,
                                 .arguments = tu.invocation.arguments,
@@ -140,58 +141,11 @@ public:
     compdb.save();
   }
 
-  std::vector<std::string> expand_options(std::string_view config_name) const {
-    const auto& options = config.options;
-    const auto& cfg     = config.configurations.at(std::string(config_name));
-
-    const bool ext             = cfg.gnu_extensions;
-    const auto ver             = cfg.standard;
-    const std::string standard = std::format("-std={}++{}", (ext ? "gnu" : "c"), ver);
-    std::vector<std::string> cmd;
-    cmd.push_back(standard);
-
-    for (auto const& o : options.compile_options) {
-      cmd.push_back(o);
-    }
-
-    for (auto const& dir : options.include_dirs) {
-      cmd.push_back(std::format("-I{}", dir.string()));
-    }
-
-    for (auto const& d : options.compile_definitions) {
-      cmd.push_back(std::format("-D{}", d));
-    }
-
-    if (auto ns = config.project.namespace_; not ns.empty()) {
-      cmd.emplace_back("-DRSL_TEST_NAMESPACE=" + ns);
-    }
-    cmd.emplace_back("-DRSL_TEST_UNIT");
-    return cmd;
-  }
-
-  std::vector<std::string> expand_link_options() const {
-    std::vector<std::string> cmd;
-    for (auto const& lib : config.options.link_libraries) {
-      if (lib.is_absolute()) {
-        cmd.push_back(std::format("-L{}", lib.string()));
-      } else {
-        cmd.push_back(std::format("-l{}", lib.string()));
-      }
-    }
-
-    // cmd.push_back(std::format("-Wl,-rpath,{}", build_path.string()));
-    // cmd.push_back(std::format("-L{}", build_path.string()));
-    cmd.emplace_back("-fPIC");
-    cmd.emplace_back("-shared");
-    return cmd;
-  }
-
-  mutable size_t counter = 0;
   [[nodiscard]]
   TestTU make_invocation(std::string_view config_name,
                          std::filesystem::path const& test_path,
                          bool dump_dependencies = false,
-                         bool link              = true) const {
+                         bool link              = true) {
     const std::filesystem::path build_path   = config.project.build_path;
     const std::filesystem::path project_path = config.project.project_path;
 
@@ -203,10 +157,10 @@ public:
     out_path = weakly_canonical(out_path);
 
     std::vector<std::string> cmd = {compiler_path};
-    cmd.append_range(expand_options(config_name));
+    cmd.append_range(config.expand_options(config_name));
 
     if (link && not dump_dependencies) {
-      cmd.append_range(expand_link_options());
+      cmd.append_range(config.expand_link_options());
 
       // out file
       cmd.emplace_back("-o");

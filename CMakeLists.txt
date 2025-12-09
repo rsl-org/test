@@ -14,15 +14,14 @@ target_compile_options(rsltest PUBLIC
   "-freflection-latest"
   # "-ftime-trace"
   # "-fconstexpr-steps=10000000" # required to scan the global namespace
-  "-ftemplate-backtrace-limit=0"
 )
 
 target_include_directories(rsltest PUBLIC 
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
-find_package(libassert REQUIRED)
-target_link_libraries(rsltest PUBLIC libassert::assert)
+# find_package(libassert REQUIRED)
+# target_link_libraries(rsltest PUBLIC libassert::assert)
 target_link_libraries(rsltest_main PUBLIC rsltest)
 
 find_package(rsl-util REQUIRED)
@@ -31,7 +30,7 @@ find_package(rsl-xml REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 target_link_libraries(rsltest PUBLIC rsl::util)
-target_link_libraries(rsltest PUBLIC rsl::config)
+target_link_libraries(rsltest_main PUBLIC rsl::config)
 target_link_libraries(rsltest_main PUBLIC rsl::xml)
 target_link_libraries(rsltest_main PUBLIC nlohmann_json::nlohmann_json)
 
