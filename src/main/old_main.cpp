@@ -4,7 +4,7 @@
 #include <string>
 
 #include <rsl/config>
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/util.hpp>
 #include <rsl/testing/_testing_impl/factory.hpp>

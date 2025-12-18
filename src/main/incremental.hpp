@@ -12,7 +12,7 @@
 #include "compdb.hpp"
 #include "platform/library.hpp"
 
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 #include <rsl/testing/_testing_impl/discovery.hpp>
 
 namespace rsl::testing::_impl_main {

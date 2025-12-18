@@ -15,7 +15,7 @@ using testing::params;
 using testing::tparams;
 
 using testing::expect_failure;
-using testing::rename;
+// using testing::rename; // TODO alias rsl::rename
 using testing::skip;
 using testing::skip_if;
 

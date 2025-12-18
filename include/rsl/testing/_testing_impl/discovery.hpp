@@ -131,10 +131,7 @@ struct TestDiscovery {
   }
 };
 
-inline std::set<TestDef>& registry() {
-  static std::set<TestDef> reg;
-  return reg;
-}
+std::set<TestDef>& registry();
 
 template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_tests() {

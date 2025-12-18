@@ -1,7 +1,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdio>
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 
 namespace rsl::testing {
 class ConsoleOutput : public Output {

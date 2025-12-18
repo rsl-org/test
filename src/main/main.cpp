@@ -2,7 +2,7 @@
 #include <rsl/config>
 
 #include <rsl/testing/_testing_impl/discovery.hpp>
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 
 #include "incremental.hpp"
 #include "platform/library.hpp"

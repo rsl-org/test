@@ -122,11 +122,12 @@ function(collect_interface_usage INTERFACE_TARGET OUT_INCLUDES OUT_DEFS OUT_OPTI
       # message("${dep} => ${dep_fixed}")
       if(dep_fixed AND TARGET ${dep_fixed})
         # Recursive call, passing the same visited list
-        get_target_property(TYPE ${dep_fixed} dep_type)
+        get_target_property(dep_type ${dep_fixed} TYPE)
         collect_interface_usage("${dep_fixed}" dep_includes dep_defs dep_opts dep_libs)
         list(APPEND includes ${dep_includes})
         list(APPEND defs ${dep_defs})
         list(APPEND options ${dep_opts})
+        
         if(dep_type STREQUAL "INTERFACE_LIBRARY")
           list(APPEND libs ${dep_libs})
         else()
@@ -211,14 +212,15 @@ function(target_enable_tests _TEST_ARG_TARGET)
   target_link_libraries(_deps_target INTERFACE ${_TEST_ARG_TARGET})
   target_link_libraries(_deps_target INTERFACE rsltest)
 
-  include(FetchContent)
-  FetchContent_Declare(
-    libassert
-    GIT_REPOSITORY https://github.com/jeremy-rifkin/libassert.git
-    GIT_TAG        v2.2.1 # <HASH or TAG>
-  )
-  FetchContent_MakeAvailable(libassert)
-  target_link_libraries(_deps_target INTERFACE libassert::assert)
+  # TODO
+  # include(FetchContent)
+  # FetchContent_Declare(
+  #   libassert
+  #   GIT_REPOSITORY https://github.com/jeremy-rifkin/libassert.git
+  #   GIT_TAG        v2.2.1 # <HASH or TAG>
+  # )
+  # FetchContent_MakeAvailable(libassert)
+  # target_link_libraries(_deps_target INTERFACE libassert::assert)
 
   # _impl_property(_dep_link_libs INTERFACE_LINK_LIBRARIES TARGET _deps_target)
   #_impl_property(_dep_includes INTERFACE_INCLUDE_DIRECTORIES TARGET _dep_target)

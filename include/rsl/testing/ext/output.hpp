@@ -5,7 +5,7 @@
 #include <format>
 
 #include "../test.hpp"
-#include "../_testing_impl/factory.hpp"
+#include "factory.hpp"
 
 namespace rsl::testing {
 struct Output {

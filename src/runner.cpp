@@ -9,7 +9,7 @@
 #include <rsl/testing/assert.hpp>
 #include <rsl/testing/test.hpp>
 #include <rsl/testing/result.hpp>
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 #include <rsl/testing/util.hpp>
 
 // #include <cpptrace/basic.hpp>

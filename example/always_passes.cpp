@@ -5,7 +5,6 @@
 namespace demo {
 auto zoinks(bool zoinks) {
   bool x = true;
-  ASSERT(zoinks == false);
   if (zoinks) {
     for (int i = 0; i < 4; ++i) {
       x += std::puts("foo");
@@ -13,6 +12,7 @@ auto zoinks(bool zoinks) {
   } else {
     x = false;
   }
+  ASSERT(zoinks == false);
   return x;
 }
 
@@ -24,5 +24,3 @@ auto zoinks(bool zoinks) {
   zoinks(foo());
 }
 }  // namespace demo
-
-int main(){}

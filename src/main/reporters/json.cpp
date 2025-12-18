@@ -1,4 +1,4 @@
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 #include <print>
 #include <rsl/testing/assert.hpp>
 #include "rsl/testing/result.hpp"

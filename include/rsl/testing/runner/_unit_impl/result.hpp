@@ -2,9 +2,10 @@
 #include <cstddef>
 #include <string>
 
-#include "assert.hpp"
+#include <rsl/testing/assert.hpp>
 
 namespace rsl::testing {
+class Test;
 
 enum class TestOutcome: uint8_t {
   FAIL,
@@ -23,13 +24,13 @@ struct FileCoverage {
 };
 
 struct Result {
-  class Test const* test;
+  Test const* test;
   std::string name;
 
   TestOutcome outcome;
   double duration_ms;
 
-  std::optional<assertion_failure> failure;
+  std::optional<AssertionFailure> failure;
   std::string exception;
   std::string stdout;
   std::string stderr;
@@ -39,7 +40,7 @@ struct Result {
 };
 
 struct TestResult {
-  class Test const* test;
+  Test const* test;
   std::vector<Result> results;
 };
 }  // namespace rsl::testing

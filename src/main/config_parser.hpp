@@ -132,16 +132,12 @@ struct RunnerConfig {
     std::vector<std::string> cmd;
     for (auto const& lib : options.link_libraries) {
       if (lib.is_absolute()) {
+        cmd.push_back(std::format("-Wl,-rpath,'{}'", lib.parent_path().string()));
         cmd.push_back(std::format("{}", lib.string()));
       } else {
         cmd.push_back(std::format("-l{}", lib.string()));
       }
     }
-
-    // cmd.push_back(std::format("-Wl,-rpath,{}", build_path.string()));
-    // cmd.push_back(std::format("-L{}", build_path.string()));
-    cmd.emplace_back("-fPIC");
-    cmd.emplace_back("-shared");
     return cmd;
   }
 };
