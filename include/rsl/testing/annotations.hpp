@@ -6,6 +6,7 @@
 #include <rsl/span>
 #include <rsl/string_view>
 #include <rsl/assert>
+#include <rsl/annotations>
 
 #include "_testing_impl/util.hpp"
 #include "_testing_impl/paramset.hpp"
@@ -53,14 +54,6 @@ struct SkipIf {
   }
 };
 
-struct Rename {
-  rsl::string_view value;
-
-  static consteval Rename operator()(std::string_view new_name) {
-    return Rename(define_static_string(new_name));
-  }
-};
-
 // parameterization
 struct TParams {
   rsl::span<ParamSet const> value;
@@ -101,7 +94,6 @@ constexpr inline annotations::FuzzTag fuzz;
 constexpr inline annotations::ExpectFailureTag expect_failure;
 constexpr inline annotations::Skip skip;
 constexpr inline annotations::SkipIf skip_if;
-constexpr inline annotations::Rename rename;
 
 using tparams = annotations::TParams;
 using params  = annotations::Params;
@@ -132,12 +124,8 @@ struct Annotations {  // consteval-only
       } else if (type == ^^annotations::Skip) {
         // constexpr_assert(skip == nullptr, "Cannot have more than one skip annotation.");
         skip = extract<annotations::Skip>(constant_of(annotation)).value;
-      } else if (type == ^^annotations::Rename) {
-        constexpr_assert(name.empty(), "Cannot rename more than once.");
-        name = extract<annotations::Rename>(constant_of(annotation)).value;
-      } else if (type == ^^annotations::FuzzTag) {
-        is_fuzz_test = true;
       }
+      // TODO check if renamed
     }
 
     targets = define_static_array(tp_sets);

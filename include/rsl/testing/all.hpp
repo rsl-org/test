@@ -15,7 +15,7 @@ using testing::params;
 using testing::tparams;
 
 using testing::expect_failure;
-using testing::rename;
+// using testing::rename; // TODO alias rsl::rename
 using testing::skip;
 using testing::skip_if;
 
@@ -65,3 +65,15 @@ struct Anchor<std::meta::info, V> {
 
 #define RSLTEST_ANCHOR(...)                  RSLTEST_ANCHOR_IMPL(std::meta::info, (^^__VA_ARGS__))
 #define RSLTEST_ANCHOR_OVERLOAD(TYPE, VALUE) RSLTEST_ANCHOR_IMPL(TYPE, VALUE)
+
+#ifdef RSL_TEST_UNIT
+// TODO REMOVE
+extern "C"
+__attribute__((__visibility__("default")))
+__attribute__((__used__))
+inline 
+void* load_tests() {
+  return &rsl::testing::_testing_impl::registry();
+}
+
+#endif

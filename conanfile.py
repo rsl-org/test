@@ -71,7 +71,8 @@ class rsltestRecipe(ConanFile):
 
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "rsl-test")
-        
+        self.cpp_info.set_property("cmake_build_modules", ["cmake/rsl-test.cmake"])
+
         test = self.cpp_info.components["test"]
         test.set_property("cmake_target_name", "rsl::test")
         test.includedirs = ["include"]

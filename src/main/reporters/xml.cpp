@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 #include <rsl/xml>
 
 namespace rsl::testing::_impl {

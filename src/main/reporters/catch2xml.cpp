@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-#include <rsl/testing/output.hpp>
+#include <rsl/testing/ext/output.hpp>
 #include <rsl/xml>
 
 namespace rsl::testing::_xml_impl {

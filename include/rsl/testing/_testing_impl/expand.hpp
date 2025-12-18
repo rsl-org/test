@@ -8,27 +8,15 @@
 #include <rsl/assert>
 #include <rsl/repr>
 #include <rsl/testing/assert.hpp>
-
 #include <rsl/testing/annotations.hpp>
-#include <rsl/testing/result.hpp>
 
 #include "fixture.hpp"
 
+namespace rsl::testing {
+class Test;
+}
+
 namespace rsl::testing::_testing_impl {
-template <std::meta::info R, std::meta::info Target>
-struct FuzzRunner {
-  static int run(uint8_t const* Data, size_t Size) {
-    // TODO
-    return 0;
-  }
-
-  // mutator must be able to consider domains
-  static size_t mutate(uint8_t* Data, size_t Size, size_t MaxSize, unsigned int Seed) {
-    // TODO
-    return 0;
-  }
-};
-
 template <typename TC, std::meta::info Def, std::meta::info Target>
 struct TestRunner {
   template <typename T>

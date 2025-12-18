@@ -19,12 +19,16 @@
 namespace rsl::testing::_testing_impl {
 
 template <std::meta::info R>
-Test make_test_impl() {
+Test make_test_impl(std::string const& path) {
   if constexpr (has_identifier(R) && identifier_of(R) == "_rsl_test_surrogate") {
     constexpr auto target = [:R:]();
-    return Test(target, R);
+    auto test             = Test(target, R);
+    test.module_path      = path;
+    return test;
   } else {
-    return Test(R, R);
+    auto test        = Test(R, R);
+    test.module_path = path;
+    return test;
   }
 }
 
@@ -52,12 +56,25 @@ struct TestDiscovery {
   std::meta::access_context ctx = std::meta::access_context::current();
 
   consteval void handle_member(std::meta::info R) {
-    if (!has_identifier(R) || identifier_of(R)[0] == '_') {
+    if (!has_identifier(R)) {
+      return;
+    }
+
+    auto identifier = identifier_of(R);
+    if (identifier[0] == '_') {
       return;
     }
 
     if (!(is_function(R) || is_variable(R) || (is_complete_type(R) && is_class_type(R)))) {
       return;
+    }
+
+    if (identifier.starts_with("test_")) {
+      if (is_complete_type(R) && is_class_type(R)) {
+        tests.append_range(expand_class(R));
+      } else {
+        tests.emplace_back(make_test(R));
+      }
     }
 
     auto annotations = annotations_of(R);
@@ -113,13 +130,14 @@ struct TestDiscovery {
     return discovery.tests;
   }
 };
+
 std::set<TestDef>& registry();
 
 template <std::meta::info NS, auto TUTag = [] {}>
 bool enable_tests() {
   constexpr auto tests = define_static_array(_testing_impl::TestDiscovery::find_tests<TUTag>(NS));
   for (auto const& test : tests) {
-    _testing_impl::registry().insert(test);
+    registry().insert(test);
   }
   return true;
 }
