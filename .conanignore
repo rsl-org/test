@@ -1,2 +1,2 @@
 *
-!extensions/generators
+!extensions/generators/json_dump.py

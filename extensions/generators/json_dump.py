@@ -4,9 +4,9 @@ import json
 import os
 
 
-class cflags:
+class json_dump:
 
-    name = "cflags"
+    name = "json_dump"
 
     def generate(self):
         ir = {
