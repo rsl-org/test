@@ -5,8 +5,8 @@ import os
 
 
 class json_dump:
-
-    name = "json_dump"
+    def __init__(self, conanfile):
+        self._conanfile = conanfile
 
     def generate(self):
         ir = {
@@ -15,7 +15,7 @@ class json_dump:
             "dependencies": {}
         }
 
-        for dep_name, dep in self.dependencies.items():
+        for dep_name, dep in self._conanfile.dependencies.items():
             cpp = dep.cpp_info
 
             ir["dependencies"][dep_name] = {
@@ -32,7 +32,7 @@ class json_dump:
         save(self, "flags.json", json.dumps(ir, indent=2))
 
     def _detect_compiler(self):
-        compiler = str(self.settings.get_safe("compiler"))
+        compiler = str(self._conanfile.settings.get_safe("compiler"))
 
         if compiler == "msvc":
             return "msvc"
@@ -43,6 +43,6 @@ class json_dump:
         return "unknown"
 
     def _platform(self):
-        os_ = str(self.settings.get_safe("os"))
-        arch = str(self.settings.get_safe("arch"))
+        os_ = str(self._conanfile.settings.get_safe("os"))
+        arch = str(self._conanfile.settings.get_safe("arch"))
         return {"os": os_, "arch": arch}
