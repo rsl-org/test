@@ -45,10 +45,11 @@
 **/compile_commands.json
 **/scratchpad*.*
 **/CMakeUserPresets.json
-lib/
+/lib/
 
 # Caches
 .cache
 .pytest_cache
 
 # .devcontainer
+src_old

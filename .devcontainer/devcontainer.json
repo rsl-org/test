@@ -1,0 +1,43 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/cpp
+{
+  "name": "Fedora Rawhide",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "ms-python.debugpy",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.vscode-python-envs",
+        "ms-python.isort",
+        "ms-python.mypy-type-checker",
+        "ms-python.autopep8",
+        "ms-vscode.cmake-tools",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "matepek.vscode-catch2-test-adapter",
+        "Gruntfuggly.todo-tree",
+        "xaver.clang-format",
+        "BlueGlassBlock.better-json5"
+      ]
+    },
+    "settings": {
+      "editor.tabSize": 2,
+      "terminal.integrated.defaultProfile.linux": "zsh",
+      "terminal.integrated.profiles.linux": {
+        "zsh": {
+          "path": "zsh"
+        },
+        "tmux": {
+          "path": "tmux",
+          "icon": "terminal-tmux"
+        }
+      }
+    }
+  }
+}

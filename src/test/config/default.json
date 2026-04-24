@@ -1,0 +1,11 @@
+{
+  "test_paths": ["test/", "tests/", "unittest/"],
+  "lit": {
+    "file_patterns": ["*.verify.*", "*.compile.*", "*.run.*"],
+    "driver": "recheck --mode=lit"
+  },
+  "cmake": {
+    "file_patterns": ["CMakeLists.txt"],
+    "driver": "cmake --build ."
+  }
+}
